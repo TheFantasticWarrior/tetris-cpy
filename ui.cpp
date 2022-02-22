@@ -3,7 +3,7 @@
 #define io
 #include <iostream>
 #endif // !io
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "config.h"
 #include "ui.h"
 
@@ -45,7 +45,7 @@ void update(game &g) {
 		}
 		else if(sd1) {
 			sd1 = 0;
-			g.y += 1;
+			g.sd();
 			updated = true;
 		}
 	}

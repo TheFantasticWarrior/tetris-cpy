@@ -39,7 +39,7 @@ int* game::check_clear() {
 		int row = y + 3 - i;
 		if (row < 30)
 		{
-			std::cout << row << "\n";
+			//std::cout << row << "\n";
 			for (size_t j = 0; j < COLUMNS; j++)
 			{
 				if (board[row][j] == -1) {
@@ -54,7 +54,7 @@ int* game::check_clear() {
 			goto end;
 		}
 		clear[i-invalid] =row;
-		std::cout << row << " clear \n";
+		//std::cout << row << " clear \n";
 		lines++;
 	end:;
 	}
@@ -87,7 +87,7 @@ int* game::check_clear() {
 			}
 			//std::cout << i << j << offset;
 		}
-		std::cout << "done\n";
+		//std::cout << "done\n";
 	}
 	int clears[2] = {lines,0};
 	return clears;
@@ -208,7 +208,7 @@ void game::sd() {
 	for (size_t i = 0; i < 4; i++) {
 		for (size_t j = 0; j < 4; j++)
 		{
-			if (y + j <29&&board[y + j + 1][x + i] != -1 && piecedefs[active][rotation][j][i] != -1) {
+			if (y + j > 29 || (board[y + j + 1][x + i] != -1 && piecedefs[active][rotation][j][i] != -1)) {
 				goto end;
 			}
 		}
