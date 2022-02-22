@@ -14,8 +14,9 @@ cmake --build .
 ```
 note: mingw seems to fail, use visual studio if error:
 `Could not find a package configuration file provided by "SDL2" with any of the following names:`
-## mac/linux(not tested):
+## mac/linux:
 Install [brew](https://brew.sh)
+(or replace brew with sudo apt-get on linux)
 ```
 brew install sdl2
 brew install cmake
