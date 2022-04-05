@@ -1,15 +1,21 @@
-int DAS = 83;
-int DROPDAS = 40;
-int ARR = 0;
+#include "inireader.h"
+INIReader reader("config.ini");
+int DAS = reader.GetInteger("control","DAS",133);
+int DROPDAS = reader.GetInteger("control", "SOFTDROPDELAY", 20);
+int ARR = reader.GetInteger("control", "ARR", 0);
 
-bool ghost = true;
 // https://wiki.libsdl.org/SDL_Keycode
-const SDL_Keycode HARDDROP = SDLK_w;
-const SDL_Keycode SOFTDROP = SDLK_s;
-const SDL_Keycode LEFT = SDLK_a;
-const SDL_Keycode RIGHT = SDLK_d;
-const SDL_Keycode CW = SDLK_l;
-const SDL_Keycode CCW = SDLK_j; 
-const SDL_Keycode HOLD = SDLK_k;
-const SDL_Keycode RT = SDLK_i; //180
-const SDL_Keycode RESET = SDLK_r;
+int HARDDROP = reader.GetInteger("control", "HARDDROP", 'v');
+int SOFTDROP = reader.GetInteger("control", "SOFTDROP", 0x40000051);
+int LEFT = reader.GetInteger("control", "LEFT", 0x40000050);
+int RIGHT = reader.GetInteger("control", "RIGHT", 0x4000004F);
+int CW = reader.GetInteger("control", "CW", 'x');
+int CCW = reader.GetInteger("control", "CCW", 'z');
+int HOLD = reader.GetInteger("control", "HOLD", 'c');
+int RT = reader.GetInteger("control", "180", 'a'); //180
+int RESET = reader.GetInteger("control", "RESET", 0x4000003B);
+
+bool ghost = reader.GetBoolean("graphics", "ghost", true);
+bool active_piece = reader.GetBoolean("graphics", "active_piece", true);
+
+

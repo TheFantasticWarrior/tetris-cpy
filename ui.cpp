@@ -61,17 +61,18 @@ void input(game &g)
 		}
 		if (event.key.repeat == 0 && event.type == SDL_KEYDOWN)
 		{
-			if (event.key.keysym.sym == HARDDROP)
+			int a = int(event.key.keysym.sym);
+			if (a == HARDDROP)
 			{
 				updated = true;
 				g.harddrop();
 			}
-			if (event.key.keysym.sym == HOLD)
+			if (a == HOLD)
 			{
 				updated = true;
 				g.hold();
 			}
-			if (event.key.keysym.sym == SOFTDROP)
+			if (a == SOFTDROP)
 			{
 
 				softdroptimer = SDL_GetTicks();
@@ -79,23 +80,23 @@ void input(game &g)
 				softdrop = true;
 				updated = true;
 			}
-			if (event.key.keysym.sym == CW)
+			if (a == CW)
 			{
 				g.rotate(1);
 				updated = true;
 			}
-			if (event.key.keysym.sym == CCW)
+			if (a == CCW)
 			{
 				g.rotate(-1);
 				updated = true;
 			}
-			if (event.key.keysym.sym == RT)
+			if (a == RT)
 			{
 				g.rotate(2);
 				updated = true;
 
 			}
-			if (event.key.keysym.sym == LEFT)
+			if (a == LEFT)
 			{
 				g.move(0, -1);
 				leftdastimer = SDL_GetTicks();
@@ -103,7 +104,7 @@ void input(game &g)
 				right = 0;
 				updated = true;
 			}
-			if (event.key.keysym.sym == RIGHT)
+			if (a == RIGHT)
 			{
 				g.move(0, 1);
 				rightdastimer = SDL_GetTicks();
@@ -111,7 +112,7 @@ void input(game &g)
 				left = 0;
 				updated = true;
 			}
-			if (event.key.keysym.sym == RESET)
+			if (a == RESET)
 			{
 				g.reset();
 				left = 0;
@@ -127,18 +128,19 @@ void input(game &g)
 		}
 		if(event.type == SDL_KEYUP)
 		{
-			if (event.key.keysym.sym == LEFT)
+			int a = int(event.key.keysym.sym);
+			if (a == LEFT)
 			{
 				leftdastimer = 0;
 				left = 0;
 				
 			}
-			if (event.key.keysym.sym == RIGHT)
+			if (a == RIGHT)
 			{
 				rightdastimer = 0;
 				right = 0;
 			}
-			if (event.key.keysym.sym == SOFTDROP)
+			if (a == SOFTDROP)
 			{
 				softdrop = false;
 			}
@@ -199,6 +201,8 @@ void draw(game &g) {
 		}
 	}
 	//active
+	if (active_piece)
+	{
 	for (int_fast8_t i = 0; i < 4; i++)
 	{
 		for (int_fast8_t j = 0; j < 4; j++)
@@ -211,8 +215,27 @@ void draw(game &g) {
 				SDL_RenderFillRect(renderer, &rect);
 			}
 
+			}
 		}
 	}
+	else
+	{
+		for (int_fast8_t i = 0; i < 4; i++)
+		{
+			for (int_fast8_t j = 0; j < 4; j++)
+			{
+				rect.x = BOARDX + (3 + i) * (PIXEL_SIZE + 1);
+				rect.y = PIXEL_SIZE / 2 + (-1 + j) * (PIXEL_SIZE + 1);
+				if (g.piecedefs[g.active][0][j][i] != -1)
+				{
+					rgba_from_rgb(colors[g.piecedefs[g.active][0][j][i] + 1]);
+					SDL_RenderFillRect(renderer, &rect);
+				}
+
+		}
+	}
+	}
+
 	//ghost
 	if (ghost){
 		ghosty= g.y+g.softdropdist();

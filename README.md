@@ -1,6 +1,6 @@
 # Tetris with instant soft drop delay
 Following tetris guidelines, instant softdrop after specified time\
-You can edit the [settings](config.h)
+To edit settings, put file `config.ini` in the same folder
 # Install
 
 ## Windows:

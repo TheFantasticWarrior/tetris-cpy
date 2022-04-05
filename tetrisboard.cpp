@@ -14,7 +14,7 @@ std::mt19937 gen(rd());
 
 
 void game::print_row(int index){
-	for (int i=0;i<COLUMNS;i++)
+	for (int_fast8_t i=0;i<COLUMNS;i++)
 		{
 			int val=board[index][i];
 			if (val!=-1)
@@ -30,17 +30,16 @@ void game::print_row(int index){
 	
 	
 }
-int* game::check_clear() {
+int game::check_clear() {
 	int clear[4]={-1,-1,-1,-1};
 	int lines = 0;
 	int invalid = 0;
-	for (size_t i = 0; i < 4; i++)
+	for (int_fast8_t i = 0; i < 4; i++)
 	{
 		int row = y + 3 - i;
 		if (row < 30)
 		{
-			//std::cout << row << "\n";
-			for (size_t j = 0; j < COLUMNS; j++)
+			for (int_fast8_t j = 0; j < COLUMNS; j++)
 			{
 				if (board[row][j] == -1) {
 					invalid++;
@@ -53,13 +52,50 @@ int* game::check_clear() {
 			invalid++;
 			goto end;
 		}
-		clear[i-invalid] =row;
-		//std::cout << row << " clear \n";
+		clear[i - invalid] = row;
 		lines++;
 	end:;
 	}
+	int type = 0; //normal,t spin, t spin mini
+	if (active == 4) { //T
+		
+		int block = 0;
+		int oob = 0; //out of bounds
+		int frontcount = 0;
+		int front[4] = { 0b00,0b01,0b11,0b10 };
+		for (int_fast8_t i:{0, 1})
+		{
+			for (int_fast8_t j : {0, 1}) {
+				if (y + 1 + i > 29 || x + 1 + j < 0 || x + 1 + j>10) {
+					oob++;
+				}
+				else if (board[y +2* i][x + 2* j]!=-1)
+				{
+					if ((i << 1) + j == front[rotation] || (i << 1) + j == front[mod(rotation + 1, 4)])
+					{
+						frontcount++;
+					}
+					block++;
+				}
+			}
+
+		}
+		if (block+oob >= 3) {
+			if ((frontcount == 2) || kick) {
+				type = 1;
+			}
+			else
+			{
+				type = 2;
+			}
+		}
+	}
+	
+
 	if (lines)
 	{
+		combo++;
+		//board clear
 		int j = 29;
 		int i = 0;
 		int offset = 0;
@@ -74,7 +110,7 @@ int* game::check_clear() {
 			{
 				if (ny<0)
 				{
-					for (int i = 0; i < 10; i++)
+					for (int_fast8_t i = 0; i < 10; i++)
 					{
 						board[j][i] = -1;
 					}
@@ -85,26 +121,42 @@ int* game::check_clear() {
 				}
 				j--;
 			}
-			//std::cout << i << j << offset;
 		}
-		//std::cout << "done\n";
+		if (lines == 4) {
+			attack = 4+b2b;
+			b2b = 1;
+		}
+		else if (type == 1){
+			attack = lines * 2 + b2b;
+			
+			b2b = 1;
+		}
+		else if (type == 2) {
+			attack = lines - 1+b2b;
+			b2b = 1;
+		}
+		else
+		{
+			attack = lines - 1;
+			b2b = 0;
+		}
 	}
-	int clears[2] = {lines,0};
-	return clears;
+	else
+	{
+		attack = 0;
+		combo = 0;
+	}
+	
+	return lines;
 }
 void game::print_board()
 {
-	for (int i=INVISIBLE_ROWS;i<ROWS;i++)
+	for (int_fast8_t i=INVISIBLE_ROWS;i<ROWS;i++)
 		{
 			std::cout<<i<<" ";
 			print_row(i);
 		}
 	std::cout<<"\n";
-	/*for (size_t i = 0; i < 5; i++)
-	{
-		std::cout<<hidden_queue[i]<<"\n";
-	}
-	std::cout<<"\n";*/
 }
 
 void game::reset(){
@@ -113,6 +165,7 @@ void game::reset(){
 	hidden_queue.clear();
 	held = -1;
 	hold_used = false;
+	kick = 0;
 	new_piece();
 }
 void game::game_over(){
@@ -127,11 +180,16 @@ void game::bag_randomizer()
 	hidden_queue.insert(hidden_queue.end(), std::begin(a),std::end(a) );
 }
 void game::place(){
-	for (int i=0;i<4;i++){
-		for (int j=0;j<4;j++){
+	int count = 0;
+	for (int_fast8_t i=0;i<4;i++){
+		for (int_fast8_t j=0;j<4;j++){
 			if(piecedefs[active][rotation][j][i]!=-1){
 				if (board[y+j][x+i]==-1){
 					board[y+j][x+i]=piecedefs[active][rotation][j][i];
+					if (y + j < 10)
+					{
+						count++;
+					}
 				} else{
 					std::cout<<y+j<<" "<<x+i<<"error\n";
 					game_over();
@@ -139,9 +197,14 @@ void game::place(){
 			}
 		}
 	}
+	if (count == 4)
+	{
+		game_over();
+	}
 	check_clear();
 	new_piece();
 	hold_used = false;
+	kick = 0;
 }
 
 
@@ -153,6 +216,16 @@ void game::new_piece(){
 	}
 	active=hidden_queue[0];
 	rotation=0;
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			if (piecedefs[active][rotation][j][i] != -1) {
+				if (board[y + j][x + i] != -1) {
+					std::cout << y + j << " " << x + i << "collide\n";
+					game_over();
+				}
+			}
+		}
+	}
 	hidden_queue.erase(hidden_queue.begin());
 	std::copy(hidden_queue.begin(),hidden_queue.begin()+5,queue);
 	
@@ -169,32 +242,15 @@ void game::hold() {
 			new_piece();
 		}
 		hold_used = true;
-	}
-}
-void game::get_bottom(int rotation){
-	for (size_t i = 0; i < 4; i++)
-	{
-		bottom[i] = 4;
-		for (int j = 0; j <4; j++)
-		{
-			
-			if(piecedefs[active][rotation][3-j][i]!=-1){
-				bottom[i] = j;
-				//std::cout << j << std::endl;
-				break;
-			}
-			
-			
-		}
+		kick = 0;
 	}
 }
 int game::softdropdist(){
-	get_bottom(rotation);
 	int height[4]={30,30,30,30};
-	for (size_t i = 0; i < 4; i++){
-		if (bottom[i]!=4){
+	for (int_fast8_t i = 0; i < 4; i++){
+		if (bottom[active][rotation][i]!=4){
 			int j = 0;
-			while (board[j + y+3-bottom[i]][x+i] == -1)
+			while (board[j + y+3-bottom[active][rotation][i]][x+i] == -1&& j + y - bottom[active][rotation][i]<27)
 			{
 				j++;
 			}
@@ -204,16 +260,15 @@ int game::softdropdist(){
 	return *std::min_element(height,height+4);
 }
 void game::sd() {
-	get_bottom(rotation);
-	for (size_t i = 0; i < 4; i++) {
-		for (size_t j = 0; j < 4; j++)
-		{
-			if (y + j > 29 || (board[y + j + 1][x + i] != -1 && piecedefs[active][rotation][j][i] != -1)) {
-				goto end;
-			}
+
+	for (int_fast8_t i = 0; i < 4; i++) {
+		if (bottom[active][rotation][i] != 4 && !(board[1 + y + 3 - bottom[active][rotation][i]][x + i] == -1 && 1 + y - bottom[active][rotation][i] < 27)){
+			goto end;
+			
 		}
 	}
 	y += 1;
+	kick = 0;
 end:;
 }
 void game::harddrop(){
@@ -225,8 +280,8 @@ void game::harddrop2() { //slower
 	bool allowed = true;
 	while (allowed) {
 		ny++;
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
+		for (int_fast8_t i = 0; i < 4; i++) {
+			for (int_fast8_t j = 0; j < 4; j++) {
 				if (piecedefs[active][rotation][j][i] != -1) {
 					if (board[ny + j][x + i] != -1) {
 						allowed = false;
@@ -237,8 +292,8 @@ void game::harddrop2() { //slower
 		}
 	}
 	end:
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
+	for (int_fast8_t i = 0; i < 4; i++) {
+		for (int_fast8_t j = 0; j < 4; j++) {
 			if (piecedefs[active][rotation][j][i] != -1) {
 				board[ny-1 + j][x + i] = piecedefs[active][rotation][j][i];
 			}
@@ -255,7 +310,7 @@ void game::rotate(int direction)
 	int ny, nx, nr;
 	if (direction != 2) {
 
-		for (size_t n = 0; n < 5; n++)
+		for (int_fast8_t n = 0; n < 5; n++)
 		{
 			nr = mod(rotation + direction, 4);
 			if (active==6)
@@ -268,19 +323,13 @@ void game::rotate(int direction)
 				ny = y - direction * wallkick[direction == -1 ? nr : rotation][n][1];
 				nx = x + direction * wallkick[direction == -1 ? nr : rotation][n][0];
 			}
-			for (int i = 0; i < 4; i++) {
+			for (int_fast8_t i = 0; i < 4; i++) {
 				
-				for (int j = 0; j < 4; j++) {
+				for (int_fast8_t j = 0; j < 4; j++) {
 					
-					//std::cout << ny+j << nx+i << nr<<std::endl;
 					if (piecedefs[active][nr][j][i] != -1) {
 						if ((board[ny + j][nx + i] != -1) || (ny + j > 30) || !(0 <= nx + i &&nx+i< COLUMNS)) {
-							//std::cout << "fail\n\n";
 							goto end;
-						}
-						else
-						{
-							
 						}
 					}
 				}
@@ -289,7 +338,9 @@ void game::rotate(int direction)
 			y = ny;
 			x = nx;
 			rotation = nr;
-			//std::cout <<y<<std::endl;
+			if (n==4) {
+				kick = 1;
+			}
 			goto end2;
 		end:;
 		}
@@ -297,19 +348,17 @@ void game::rotate(int direction)
 	else
 	{
 		nr = mod(rotation + direction, 4);
-		for (size_t n = 0; n < 2; n++)
+		for (int_fast8_t n = 0; n < 2; n++)
 		{
 			
 			ny = y - n*((rotation == 0) ? 1 : (rotation == 2) ? -1 : 0);
 			nx = x + n*((rotation == 1) ? 1 : (rotation == 3) ? -1 : 0);
-			for (int i = 0; i < 4; i++) {
+			for (int_fast8_t i = 0; i < 4; i++) {
 
-				for (int j = 0; j < 4; j++) {
+				for (int_fast8_t j = 0; j < 4; j++) {
 
-					//std::cout << ny+j << nx+i << nr<<std::endl;
 					if (piecedefs[active][nr][j][i] != -1) {
 						if ((board[ny + j][nx + i] != -1) || (ny + j > 30) || !(0 <= nx + i && nx + i < COLUMNS)) {
-							//std::cout << "fail\n\n";
 							goto end3;
 						}
 					}
@@ -318,7 +367,6 @@ void game::rotate(int direction)
 			y = ny;
 			x = nx;
 			rotation = nr;
-			//std::cout <<y<<std::endl;
 			goto end2;
 		end3:;
 		}
@@ -326,12 +374,12 @@ void game::rotate(int direction)
 	}
 end2:;
 }
-void game::move(int das,int d) {
+void game::move(bool das,int d) {
 	int nx = x+d;
 	bool allowed = 1;
 	do {
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
+		for (int_fast8_t i = 0; i < 4; i++) {
+			for (int_fast8_t j = 0; j < 4; j++) {
 				if (piecedefs[active][rotation][j][i] != -1) {
 					if (board[y + j][nx + i] != -1|| !(0<=nx+i&&nx+i<COLUMNS)) {
 						
@@ -343,6 +391,7 @@ void game::move(int das,int d) {
 		}
 		x = nx;
 		nx += d;
+		kick = 0;
 	} while (das&&allowed);
 end:;
 	//
