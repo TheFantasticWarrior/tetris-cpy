@@ -1,4 +1,14 @@
+#define PY_SSIZE_T_CLEAN
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <Python.h>
+#include <numpy/arrayobject.h>
+
+#ifndef tb
+#define tb
 #include "tetrisboard.h"
+#endif // !tb
+
+
 #ifndef io
 #define io
 #include <iostream>
@@ -7,9 +17,10 @@
 #include <tuple>
 #include "config.h"
 
+
 int block_size;
 int BOARDX;
-bool open = true;
+bool window_open = true;
 int lastTime;
 SDL_Rect bg;
 SDL_Rect rect;
@@ -68,7 +79,7 @@ void input(game &g)
 	while (SDL_PollEvent(&event))
 	{
 		if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
-			open = false;
+			window_open = false;
 		}
 		if (event.key.repeat == 0 && event.type == SDL_KEYDOWN)
 		{
@@ -212,14 +223,14 @@ void draw(game &g) {
 		}
 	}
 	//hold
-	if (g.held != -1)
+	if (g.held_piece != -1)
 	{
-		color_from_rgb(colors[g.held+1]);
+		color_from_rgb(colors[g.held_piece+1]);
 		for (int_fast8_t i = 0; i < 4; i++)
 		{
 			for (int_fast8_t j = 0; j < 4; j++)
 			{
-				if (g.piecedefs[g.held][0][j][i] != -1){
+				if (g.piecedefs[g.held_piece][0][j][i] != -1){
 					
 					rect.x = 0 + i * (block_size + 1);
 					rect.y = j * (block_size + 1);
@@ -287,7 +298,7 @@ void draw(game &g) {
 
 
 int frameCount, lastFrame, fps;
-void render(game &g) {
+void c_render(game &g) {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 
@@ -302,29 +313,26 @@ void render(game &g) {
 }
 
 
-void init(int pwh,int val) {
-	if (val == NULL||pwh==NULL)
+void cinit(int pwh,int val) {
+	
+	switch (pwh)
 	{
+	case 1:
+		block_size = val;
+		break;
+	case 2:
+		block_size = (val - 2) * 3 / 50 - 1;
+	case 3:
+		block_size = (val-32) / 20.5f - 1;
+		break;
+	default:
 		block_size = 40;
+		break;
 	}
-	else {
-		switch (pwh)
-		{
-		case 1:
-			block_size = val;
-			break;
-		case 2:
-			block_size = (val - 2) * 3 / 50 - 1;
-		case 3:
-			block_size = (val-32) / 20.5f - 1;
-			break;
-		default:
-			break;
-		}
-	}
+	
 	int width = (block_size + 1) * 50 / 3 + 2;
 	int height = 20.5f * (block_size + 1);
-	
+	std::cout << width << "\n";
 	BOARDX = width / 5;
 	bg.x = BOARDX; bg.y = 0; bg.w = width * 3 / 5; bg.h = height;
 	rect.x = block_size;rect.y = block_size;rect.w = block_size;rect.h = block_size;
@@ -335,28 +343,134 @@ void init(int pwh,int val) {
 	SDL_SetWindowTitle(window, "Tetris");
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 }
-
-
-int main(int argv,char* argc[]) {
-	init(t, size);
-	while (open) {
-		lastFrame = SDL_GetTicks();
-		if (lastFrame >= (lastTime + 1000)) {
-			lastTime = lastFrame;
-			fps = frameCount;
-			frameCount = 0;
-			//std::cout<<"FPS" << fps << std::endl;
-		}
-		input(g);
-		update(g);
-		if (updated){
-			render(g);
-			updated = false;
-		}
-
+PyObject* reset(PyObject* self, PyObject* args) {
+	int pwh,val;
+	if (!PyArg_ParseTuple(args, "ii", &pwh,&val))
+		return NULL;
+	cinit(pwh, val);
+	const long long int dims[2] = { 11,200 };
+	int state[211] = {
+	cleared,
+	g.active,
+	g.rotation,
+	g.x,
+	g.y,
+	g.held_piece,
+	g.hold_used };
+	for (size_t i = 0; i < 5; i++)
+	{
+		state[i + 7] = g.queue[i];
 	}
+	for (size_t i = 0; i < 200; i++)
+	{
+		state[i + 11] = g.board[10 + i / 10][i % 10];
+	}
+	return PyArray_SimpleNewFromData(2, dims, NPY_INT, state);
+}
+PyObject* step(PyObject* ,PyObject *args) {
+	int x;
+	if (!PyArg_ParseTuple(args, "i", &x))
+		return NULL;
+	switch (x)
+	{
+	case 0:
+		g.hold();
+		break;
+	case 1:
+		g.harddrop();
+		break;
+	case 2:
+		g.rotate(1);
+		break;
+	case 3:
+		g.rotate(-1);
+		break;
+	case 4:
+		g.move(0, -1);
+		break;
+	case 5:
+		g.move(0, 1);
+		break;
+	case 6:
+		g.move(1, -1);
+		break;
+	case 7:
+		g.move(1, 1);
+		break;
+	case 8:
+		g.y += g.softdropdist();
+		break;
+	default:
+		break;
+	}
+	if (!game_over)
+	{
+		const long long int dims[2] = { 11,200 };
+		int state[211] = {
+		cleared,
+		g.active,
+		g.rotation,
+		g.x,
+		g.y,
+		g.held_piece,
+		g.hold_used };
+		for (size_t i = 0; i < 5; i++)
+		{
+			state[i + 7] = g.queue[i];
+		}
+		for (size_t i = 0; i < 200; i++)
+		{
+			state[i + 11] = g.board[10 + i / 10][i % 10];
+		}
+		return PyArray_SimpleNewFromData(2, dims, NPY_INT, state);
+	}
+	else
+	{
+		const long long int dims[2] = { 1,200 };
+		int state[201] = { -1 };
+		for (size_t i = 0; i < 200; i++)
+		{
+			state[i + 1] = g.board[10 + i / 10][i % 10];
+		}
+		return PyArray_SimpleNewFromData(2, dims, NPY_INT, state);
+	}
+	
+}
+PyObject* close(PyObject* self, PyObject* Py_UNUSED) {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	Py_RETURN_NONE;
+}
+PyObject* render(PyObject* self, PyObject* Py_UNUSED) {
+	c_render(g);
+	Py_RETURN_NONE;
+}
+static PyMethodDef Methods[] = {
+	{"reset",  reset, METH_VARARGS,
+	 "Reset everything"},
+	 {"step",  step, METH_VARARGS,
+	 "Take action and return reward&state"},
+	 {"close",  close, METH_NOARGS,
+	 "close everything"},
+	 {"render",  render, METH_NOARGS,
+	 "Render"},
+	{NULL, NULL, 0, NULL}
+};
+static struct PyModuleDef Module = {
+	PyModuleDef_HEAD_INIT,
+	"env",   /* name of module */
+	NULL,
+	-1,
+	Methods
+};
+PyMODINIT_FUNC
+PyInit_env(void)
+{
+
+	import_array();
+	return PyModule_Create(&Module);
+}
+int main(int argc, char* argv[]) {
 	return 0;
 }

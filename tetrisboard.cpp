@@ -7,29 +7,18 @@
 #include <random>
 #include <algorithm>
 #include <string.h>
+
+#ifndef tb
+#define tb
 #include "tetrisboard.h"
+#endif // !tb
 
 std::random_device rd;
 std::mt19937 gen(rd());
 
 
-void game::print_row(int index){
-	for (int_fast8_t i=0;i<COLUMNS;i++)
-		{
-			int val=board[index][i];
-			if (val!=-1)
-			{
-				std::cout<<" "<<val;
-			} else
-			{
-				std::cout<<val;
-			}
-			
-		}
-		std::cout<<"\n";
-	
-	
-}
+int game_over = 0;
+int cleared = 0;
 int game::check_clear() {
 	int clear[4]={-1,-1,-1,-1};
 	int lines = 0;
@@ -149,29 +138,18 @@ int game::check_clear() {
 	
 	return lines;
 }
-void game::print_board()
-{
-	for (int_fast8_t i=INVISIBLE_ROWS;i<ROWS;i++)
-		{
-			std::cout<<i<<" ";
-			print_row(i);
-		}
-	std::cout<<"\n";
-}
+
 
 void game::reset(){
 	memset(board,-1,sizeof(board));
-
+	game_over = 0;
 	hidden_queue.clear();
-	held = -1;
+	held_piece = -1;
 	hold_used = false;
 	kick = 0;
 	new_piece();
 }
-void game::game_over(){
-	std::cout<<"game over\n";
-	exit(0);
-}
+
 
 void game::bag_randomizer()
 {
@@ -192,16 +170,16 @@ void game::place(){
 					}
 				} else{
 					std::cout<<y+j<<" "<<x+i<<"error\n";
-					game_over();
+					game_over = 1;
 				}
 			}
 		}
 	}
 	if (count == 4)
 	{
-		game_over();
+		game_over = 1;
 	}
-	check_clear();
+	cleared=check_clear();
 	new_piece();
 	hold_used = false;
 	kick = 0;
@@ -221,7 +199,7 @@ void game::new_piece(){
 			if (piecedefs[active][rotation][j][i] != -1) {
 				if (board[y + j][x + i] != -1) {
 					std::cout << y + j << " " << x + i << "collide\n";
-					game_over();
+					game_over=1;
 				}
 			}
 		}
@@ -232,13 +210,13 @@ void game::new_piece(){
 }
 void game::hold() {
 	if (!hold_used) {
-		if (held == -1) {
-			held = active;
+		if (held_piece == -1) {
+			held_piece = active;
 			new_piece();
 		}
 		else {
-			hidden_queue.insert(hidden_queue.begin(),held);
-			held = active;
+			hidden_queue.insert(hidden_queue.begin(),held_piece);
+			held_piece = active;
 			new_piece();
 		}
 		hold_used = true;

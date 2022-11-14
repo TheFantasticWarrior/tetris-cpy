@@ -6,6 +6,8 @@ const int COLUMNS=10;
 const int ROWS=30;
 const int INVISIBLE_ROWS=10;
 int mod(int x, int y);
+extern int game_over;
+extern int cleared;
 class game
 {
 	public:
@@ -16,17 +18,14 @@ class game
 		int x;
 		int y;
 		int queue[5];
-		int held=-1;
+		int held_piece=-1;
 		bool hold_used = false;
 		bool b2b=0;
 		int attack = 0;
 		int combo = 0;
-		void print_row(int index);
 
 		int check_clear();
-	
-		void print_board();
-		void game_over();
+
 		int softdropdist();
 
 		void reset();

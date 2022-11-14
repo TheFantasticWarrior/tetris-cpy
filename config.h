@@ -15,8 +15,8 @@ int HOLD = reader.GetInteger("control", "HOLD", 'c');
 int RT = reader.GetInteger("control", "180", 'a'); //180
 int RESET = reader.GetInteger("control", "RESET", 0x4000003B);
 
-int t = reader.GetInteger("graphics", "type", NULL);
-int size = reader.GetInteger("graphics", "value", NULL);
+int t = reader.GetInteger("graphics", "type", 3);
+int size = reader.GetInteger("graphics", "value", 1080);
 bool ghost = reader.GetBoolean("graphics", "ghost", true);
 bool active_piece = reader.GetBoolean("graphics", "active_piece", true);
 
