@@ -344,19 +344,20 @@ void cinit(int pwh,int val) {
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 }
 PyObject* reset(PyObject* self, PyObject* args) {
-	int pwh,val;
-	if (!PyArg_ParseTuple(args, "ii", &pwh,&val))
+	int pwh, val;
+	if (!PyArg_ParseTuple(args, "ii", &pwh, &val))
 		return NULL;
 	cinit(pwh, val);
-	const long long int dims[2] = { 11,200 };
-	int state[211] = {
-	cleared,
-	g.active,
-	g.rotation,
-	g.x,
-	g.y,
-	g.held_piece,
-	g.hold_used };
+	const long long int dims[1]  = {211};
+
+	int* state = (int*)malloc(sizeof(int) * 211);
+	state[0] = cleared;
+	state[1] = g.active;
+	state[2] = g.rotation;
+	state[3] = g.x;
+	state[4] = g.y;
+	state[5] = g.held_piece;
+	state[6] = g.hold_used;
 	for (size_t i = 0; i < 5; i++)
 	{
 		state[i + 7] = g.queue[i];
@@ -365,7 +366,7 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	{
 		state[i + 11] = g.board[10 + i / 10][i % 10];
 	}
-	return PyArray_SimpleNewFromData(2, dims, NPY_INT, state);
+	return PyArray_SimpleNewFromData(1, dims, NPY_INT, state);
 }
 PyObject* step(PyObject* ,PyObject *args) {
 	int x;
@@ -405,15 +406,15 @@ PyObject* step(PyObject* ,PyObject *args) {
 	}
 	if (!game_over)
 	{
-		const long long int dims[2] = { 11,200 };
-		int state[211] = {
-		cleared,
-		g.active,
-		g.rotation,
-		g.x,
-		g.y,
-		g.held_piece,
-		g.hold_used };
+		const long long int dims[1] = { 211 };
+		int* state = (int*)malloc(sizeof(int) * 211);
+		state[0] = cleared;
+		state[1] = g.active;
+		state[2] = g.rotation;
+		state[3] = g.x;
+		state[4] = g.y;
+		state[5] = g.held_piece;
+		state[6] = g.hold_used;
 		for (size_t i = 0; i < 5; i++)
 		{
 			state[i + 7] = g.queue[i];
@@ -422,17 +423,22 @@ PyObject* step(PyObject* ,PyObject *args) {
 		{
 			state[i + 11] = g.board[10 + i / 10][i % 10];
 		}
-		return PyArray_SimpleNewFromData(2, dims, NPY_INT, state);
+		return PyArray_SimpleNewFromData(1, dims, NPY_INT, state);
 	}
 	else
 	{
-		const long long int dims[2] = { 1,200 };
-		int state[201] = { -1 };
+		const long long int dims[1] = { 201 };
+
+		int* state = (int*)malloc(sizeof(int) * 201);
+		state[0] = -1;
 		for (size_t i = 0; i < 200; i++)
 		{
 			state[i + 1] = g.board[10 + i / 10][i % 10];
 		}
-		return PyArray_SimpleNewFromData(2, dims, NPY_INT, state);
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+		//SDL_Quit();
+		return PyArray_SimpleNewFromData(1, dims, NPY_INT, state);
 	}
 	
 }
@@ -443,9 +449,17 @@ PyObject* close(PyObject* self, PyObject* Py_UNUSED) {
 	Py_RETURN_NONE;
 }
 PyObject* render(PyObject* self, PyObject* Py_UNUSED) {
-	c_render(g);
+	c_render(g); 
+	SDL_PollEvent(&event);
+	if (event.type == SDL_QUIT) {
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+	}
+	
 	Py_RETURN_NONE;
 }
+
+
 static PyMethodDef Methods[] = {
 	{"reset",  reset, METH_VARARGS,
 	 "Reset everything"},
@@ -454,7 +468,7 @@ static PyMethodDef Methods[] = {
 	 {"close",  close, METH_NOARGS,
 	 "close everything"},
 	 {"render",  render, METH_NOARGS,
-	 "Render"},
+	 "Render window, must be called often so window doesn't freeze"},
 	{NULL, NULL, 0, NULL}
 };
 static struct PyModuleDef Module = {
@@ -472,5 +486,6 @@ PyInit_env(void)
 	return PyModule_Create(&Module);
 }
 int main(int argc, char* argv[]) {
+	
 	return 0;
 }
