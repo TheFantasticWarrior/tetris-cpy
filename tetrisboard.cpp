@@ -169,7 +169,7 @@ void game::place(){
 						count++;
 					}
 				} else{
-					std::cout<<y+j<<" "<<x+i<<"error\n";
+					//std::cout<<y+j<<" "<<x+i<<"error\n";
 					game_over = 1;
 				}
 			}
@@ -198,7 +198,7 @@ void game::new_piece(){
 		for (int j = 0; j < 4; j++) {
 			if (piecedefs[active][rotation][j][i] != -1) {
 				if (board[y + j][x + i] != -1) {
-					std::cout << y + j << " " << x + i << "collide\n";
+					//std::cout << y + j << " " << x + i << "collide\n";
 					game_over=1;
 				}
 			}
