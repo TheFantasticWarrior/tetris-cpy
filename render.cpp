@@ -60,7 +60,7 @@ void update(game &g) {
 	{
 		if (timer - softdroptimer > DROPDAS)
 		{
-			g.y += g.softdropdist();
+			g.softdrop();
 			updated = true;
 		}
 		else if(sd1) {
@@ -302,13 +302,14 @@ void c_render(game &g) {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 
+	/*
 	frameCount++;
 	int timerFPS = SDL_GetTicks() - lastFrame;
 	if (timerFPS < (8)) {
 		SDL_Delay((8) - timerFPS);
 	}
+	*/
 	draw(g);
-
 	SDL_RenderPresent(renderer);
 }
 
@@ -345,37 +346,48 @@ void cinit(int pwh,int val) {
 		SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 	}
 }
+PyObject* seed(PyObject*, PyObject* args) {
+	int *x=new int;
+	if (!PyArg_ParseTuple(args, "|i", x))
+		return NULL;
+	g.set_seed(x);
+	delete(x);
+	Py_RETURN_NONE;
+}
 PyObject* reset(PyObject* self, PyObject* args) {
 	int pwh, val;
-	if (!PyArg_ParseTuple(args, "ii", &pwh, &val))
+	if (!PyArg_ParseTuple(args, "i|i", &pwh, &val))
 		return NULL;
 	cinit(pwh, val);
-	
-	int dims[1] = {222};
-	int* state = (int*)malloc(sizeof(int) * 222);
+	const npy_intp dim = 222;
+	const npy_intp* dims = &dim;
+	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * 222);
 	state[0] = cleared;
-
-	state[1] = g.hold_used;
-	state[2] = g.rotation;
-	state[3] = g.x;
-	state[4] = g.y;
-	state[5] = g.held_piece;
-	state[6] = g.active;
+	state[1] = g.x+2;
+	state[2] = g.y;
+	state[3] = g.rotation;
+	state[4] = g.hold_used;
+	state[5] = g.active+1;
+	state[6] = g.held_piece+1;
 	for (size_t i = 0; i < 5; i++)
 	{
-		state[i + 7] = g.queue[i];
+		state[i + 7] = g.queue[i]+1;
 	}
 	for (size_t i = 0; i < 210; i++)
 	{
-		state[i + 12] = g.board[9+i % 21][ i / 21];
+		state[i + 12] = g.board[9+i % 21][ i / 21]+1;
 		//std::cout << state[i + 12] << " ";
 	}
-	return PyArray_SimpleNewFromData(1,(const npy_intp *) dims, NPY_INT32, state);
+	PyObject* ret = PyArray_SimpleNewFromData(1, dims, NPY_UINT8, state);
+	PyArray_ENABLEFLAGS((PyArrayObject*)ret, NPY_ARRAY_OWNDATA);
+	//free(state);
+	return ret;
 }
 PyObject* step(PyObject* ,PyObject *args) {
 	int x;
 	if (!PyArg_ParseTuple(args, "i", &x))
 		return NULL;
+	cleared = 0;
 	switch (x)
 	{
 	case 0:
@@ -403,33 +415,42 @@ PyObject* step(PyObject* ,PyObject *args) {
 		g.move(1, 1);
 		break;
 	case 8:
-		g.y += g.softdropdist();
+		g.softdrop();
 		break;
 	default:
 		break;
 	}
-	int dims[1] = { 222 };
-	int* state = (int*)malloc(sizeof(int) * 222);
+	const npy_intp dim = 222;
+	const npy_intp* dims = &dim;
+	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * 222);
 	if (game_over){
 		state[0] = -1;
 	} else{
 		state[0] = cleared;
 	}
-	state[1] = g.active;
-	state[2] = g.rotation;
-	state[3] = g.x;
-	state[4] = g.y;
-	state[5] = g.held_piece;
-	state[6] = g.hold_used;
+
+	state[1] = g.x+2;
+	state[2] = g.y;
+	state[3] = g.rotation;
+	state[4] = g.hold_used;
+	state[5] = g.active+1;
+	state[6] = g.held_piece+1;
 	for (size_t i = 0; i < 5; i++)
 	{
-		state[i + 7] = g.queue[i];
+		state[i + 7] = g.queue[i]+1;
 	}
 	for (size_t i = 0; i < 210; i++)
 	{
-		state[i + 12] = g.board[9+ i % 21][i / 21];
+		state[i + 12] = g.board[9+ i % 21][i / 21]+1;
 	}
-	return PyArray_SimpleNewFromData(1, (const npy_intp*) dims, NPY_INT32, state);
+	/*for (size_t i = 0; i < 222; i++)
+	{
+		std::cout << state[i] << " ";
+	}std::cout << "\n";*/
+	PyObject* ret=PyArray_SimpleNewFromData(1, dims, NPY_UINT8, state);
+	PyArray_ENABLEFLAGS((PyArrayObject*)ret, NPY_ARRAY_OWNDATA);
+	//free(state);
+	return ret;
 	
 	
 }
@@ -452,6 +473,9 @@ PyObject* render(PyObject* self, PyObject* Py_UNUSED) {
 
 
 static PyMethodDef Methods[] = {
+
+	 {"seed",  seed, METH_VARARGS,
+	 "seed the rng"},
 	{"reset",  reset, METH_VARARGS,
 	 "Reset everything"},
 	 {"step",  step, METH_VARARGS,

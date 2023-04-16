@@ -4,7 +4,6 @@
 #endif // !io
 
 
-#include <random>
 #include <algorithm>
 #include <string.h>
 
@@ -13,8 +12,7 @@
 #include "tetrisboard.h"
 #endif // !tb
 
-std::random_device rd;
-std::mt19937 gen(rd());
+
 
 
 int game_over = 0;
@@ -139,7 +137,17 @@ int game::check_clear() {
 	return lines;
 }
 
-
+void game::set_seed(int *seed) {
+	if(seed!=NULL)
+	{
+		std::random_device rd;
+		std::mt19937 gen(rd());
+	}
+	else
+	{
+		std::mt19937 gen(*seed);
+	}
+}
 void game::reset(){
 	memset(board,-1,sizeof(board));
 	game_over = 0;
@@ -248,6 +256,9 @@ void game::sd() {
 	y += 1;
 	kick = 0;
 end:;
+}
+void game::softdrop() {
+	y += softdropdist();
 }
 void game::harddrop(){
 	y+=softdropdist();

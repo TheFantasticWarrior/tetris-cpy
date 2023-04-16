@@ -1,6 +1,7 @@
 #ifndef boardh
 #define boardh
 
+#include <random>
 #include <vector>
 const int COLUMNS=10;
 const int ROWS=30;
@@ -23,13 +24,16 @@ class game
 		bool b2b=0;
 		int attack = 0;
 		int combo = 0;
-
+		std::mt19937 gen;
+		void set_seed(int *seed);
 		int check_clear();
 
 		int softdropdist();
 
 		void reset();
 		void sd();
+
+		void softdrop();
 		void harddrop();
 		void harddrop2();
 		void hold();
