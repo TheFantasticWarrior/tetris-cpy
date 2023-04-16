@@ -1,8 +1,16 @@
 # Tetris with instant soft drop delay
 Following tetris guidelines, instant softdrop after specified time\
 To edit settings, put file `config.ini` in the same folder
+# python library
+In cmakelists.txt replace python version with what you use, then
+```
+mkdir build
+cd build
+cmake ..
+cmake --build . --target env --config Release
+```
 # Install
-
+currently broken,use branch main
 ## Windows:
 install sdl: `vcpkg install sdl:x64-windows`\
 install [cmake](https://cmake.org/download/)
