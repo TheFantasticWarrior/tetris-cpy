@@ -5,6 +5,7 @@
 
 
 #include <algorithm>
+#include <random>
 #include <string.h>
 
 #ifndef tb
@@ -15,9 +16,7 @@
 
 
 
-int game_over = 0;
-int cleared = 0;
-int game::check_clear() {
+void game::check_clear() {
 	int clear[4]={-1,-1,-1,-1};
 	int lines = 0;
 	int invalid = 0;
@@ -134,27 +133,47 @@ int game::check_clear() {
 		combo = 0;
 	}
 	
-	return lines;
+	cleared= 10 * (attack)+2*lines;
 }
+void game::recieve(int incoming) {
+	std::copy(board[incoming], board[30], board[0]);
+	std::uniform_int_distribution<>dis(0, 9);
+	int x = dis(gen);
+	for (size_t j = 0; j < incoming; j++)
+	{
+		for (size_t i = 0; i < 10; i++)
+		{
+			board[29 - j][i] = (i == x) ? -1 : 7;
+		}
+	}
 
-void game::set_seed(int *seed) {
-	if(seed!=NULL)
+}
+void game::set_seed(int seed) {
+	if(seed==0)
 	{
 		std::random_device rd;
-		std::mt19937 gen(rd());
+		int seed = rd();
+		gen.seed(seed);
+		std::cout << "random seed "<<seed<<"\n";
 	}
 	else
 	{
-		std::mt19937 gen(*seed);
+		std::cout << "seed "<<seed<<"\n";
+		gen.seed(seed);
 	}
+	seeded = true;
 }
 void game::reset(){
+	if (!seeded)set_seed(0);
 	memset(board,-1,sizeof(board));
 	game_over = 0;
+	cleared = 0;
+	recieved = 0;
 	hidden_queue.clear();
 	held_piece = -1;
 	hold_used = false;
 	kick = 0;
+	spin = 0;
 	new_piece();
 }
 
@@ -187,9 +206,9 @@ void game::place(){
 	{
 		game_over = 1;
 	}
-	cleared=check_clear();
-	new_piece();
+	check_clear();
 	hold_used = false;
+	spin = 0;
 	kick = 0;
 }
 
@@ -217,6 +236,9 @@ void game::new_piece(){
 	
 }
 void game::hold() {
+	spin = 0;
+	kick = 0;
+	cleared = 0;
 	if (!hold_used) {
 		if (held_piece == -1) {
 			held_piece = active;
@@ -228,7 +250,6 @@ void game::hold() {
 			new_piece();
 		}
 		hold_used = true;
-		kick = 0;
 	}
 }
 int game::softdropdist(){
@@ -247,6 +268,9 @@ int game::softdropdist(){
 }
 void game::sd() {
 
+	spin = 0;
+	kick = 0;
+	cleared = 0;
 	for (int_fast8_t i = 0; i < 4; i++) {
 		if (bottom[active][rotation][i] != 4 && !(board[1 + y + 3 - bottom[active][rotation][i]][x + i] == -1 && 1 + y - bottom[active][rotation][i] < 27)){
 			goto end;
@@ -254,11 +278,13 @@ void game::sd() {
 		}
 	}
 	y += 1;
-	kick = 0;
 end:;
 }
 void game::softdrop() {
 	y += softdropdist();
+	spin = 0;
+	kick = 0;
+	cleared = 0;
 }
 void game::harddrop(){
 	y+=softdropdist();
@@ -296,6 +322,7 @@ int mod(int x,int y) {
 }
 void game::rotate(int direction)
 {
+	cleared = 0;
 	int ny, nx, nr;
 	if (direction != 2) {
 
@@ -327,8 +354,12 @@ void game::rotate(int direction)
 			y = ny;
 			x = nx;
 			rotation = nr;
-			if (n==4) {
-				kick = 1;
+			if(n>0)
+			{
+				spin = 1;
+				if (n == 4) {
+					kick = 1;
+				}
 			}
 			goto end2;
 		end:;
@@ -366,6 +397,10 @@ end2:;
 void game::move(bool das,int d) {
 	int nx = x+d;
 	bool allowed = 1;
+
+	kick = 0;
+	cleared = 0;
+	spin = 0;
 	do {
 		for (int_fast8_t i = 0; i < 4; i++) {
 			for (int_fast8_t j = 0; j < 4; j++) {
@@ -380,7 +415,6 @@ void game::move(bool das,int d) {
 		}
 		x = nx;
 		nx += d;
-		kick = 0;
 	} while (das&&allowed);
 end:;
 	//

@@ -7,17 +7,18 @@ const int COLUMNS=10;
 const int ROWS=30;
 const int INVISIBLE_ROWS=10;
 int mod(int x, int y);
-extern int game_over;
-extern int cleared;
+
 class game
 {
 	public:
-    
+		int game_over;
+		int cleared;
 		int board[ROWS][COLUMNS];
 		int active;
 		int rotation;
 		int x;
 		int y;
+		int recieved = 0;
 		int queue[5];
 		int held_piece=-1;
 		bool hold_used = false;
@@ -25,8 +26,10 @@ class game
 		int attack = 0;
 		int combo = 0;
 		std::mt19937 gen;
-		void set_seed(int *seed);
-		int check_clear();
+		void set_seed(int seed);
+
+		void new_piece();
+		void recieve(int incoming);
 
 		int softdropdist();
 
@@ -39,7 +42,7 @@ class game
 		void hold();
 		void move(bool das,int d);
 		void rotate(int direction);
-		int piecedefs [7][4][4][4]= { //piece, rotation, position in board
+		int piecedefs [7][4][4][4]= { //piece(SZJLTOI), rotation, position in board
 
 		{ // S
 		{
@@ -281,14 +284,16 @@ class game
 			{{0, 0},{+1, 0},{-2, 0},{+1,-2},{-2,+1}}
 		};
 
-
+		bool spin = 0;
 		bool kick=0;
+	private:
+		bool seeded = false;
 		std::vector<int> hidden_queue;
 		void bag_randomizer();
 		void place();
 		//int place_ghost(int x,int y)
 
-		void new_piece();
+		void check_clear();
     
 	
 };

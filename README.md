@@ -10,7 +10,7 @@ cmake ..
 cmake --build . --target env --config Release
 ```
 # Install
-currently broken,use branch main
+
 ## Windows:
 install sdl: `vcpkg install sdl:x64-windows`\
 install [cmake](https://cmake.org/download/)
@@ -24,7 +24,7 @@ note: mingw seems to fail, use visual studio if error:
 `Could not find a package configuration file provided by "SDL2" with any of the following names:`
 ## mac/linux:
 Install [brew](https://brew.sh)
-(or replace brew with sudo apt-get on linux)
+(or replace brew with your package manager on linux)
 ```
 brew install sdl2
 brew install cmake
