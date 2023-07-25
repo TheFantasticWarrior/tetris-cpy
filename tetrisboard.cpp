@@ -221,12 +221,16 @@ void game::new_piece(){
 	}
 	active=hidden_queue[0];
 	rotation=0;
+	start:
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (piecedefs[active][rotation][j][i] != -1) {
 				if (board[y + j][x + i] != -1) {
-					//std::cout << y + j << " " << x + i << "collide\n";
-					game_over=1;
+					if(y==10)game_over=1;
+					else {
+						y = 10;
+						goto start;
+					}
 				}
 			}
 		}
@@ -262,6 +266,7 @@ int game::softdropdist(){
 				j++;
 			}
 			height[i]=j-1;
+			//if (height[i] < 0)std::cout << "sdd error "<< height[i]<<"\n";
 		}
 	}
 	return *std::min_element(height,height+4);

@@ -375,18 +375,19 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	}
 	for (size_t i = 0; i < 210; i++)
 	{
-		state[i + 12] = g.board[9+i % 21][ i / 21]+1;
+		state[i + 12] = g.board[9+i % 21][ i / 21]+1>0;
 		//std::cout << state[i + 12] << " ";
 	}
 	//active
-	for (size_t i = 0; i < 210; i++)
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 222] = ((9 + i % 21) > g.y) && ((4 + i % 21) < g.y) && ((i / 21) > g.x) && (g.x + 5 > (i / 21)) ? (g.piecedefs[g.active][g.rotation][(8 + i % 21) - g.y][((i / 21) - 1 - g.x)] + 1) > 0:0;
+		state[i + 222] = ((9 + i % 21) >= g.y) && ((6 + i % 21) <= g.y) && ((i / 21) - g.x >= 0) && (0 >= (i / 21) - g.x - 3) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - g.y][((i / 21) - g.x)] + 1) > 0: 0;
 	}
 	//shadow
-	for (size_t i = 0; i < 210; i++)
+	int ny = g.y + g.softdropdist();
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 432] = ((10 + i % 21) > (g.y + g.softdropdist())) && ((5 + i % 21) < (g.y + g.softdropdist())) && ((i / 21) > g.x) && (g.x + 5 > (i / 21)) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (g.y + g.softdropdist())][((i / 21) - 1 - g.x)] + 1) > 0:0;
+		state[i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - g.x >= 0) && (g.x + 3 -(i / 21)>= 0) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (ny)][((i / 21) - g.x)] + 1) > 0:0;
 	}
 	for (size_t j = 0; j < 4; j++)
 	{
@@ -429,6 +430,7 @@ PyObject* step(PyObject* ,PyObject *args) {
 		break;
 	case 1:
 		g.harddrop();
+		g.new_piece();
 		break;
 	case 2:
 		g.rotate(1);
@@ -469,6 +471,9 @@ PyObject* step(PyObject* ,PyObject *args) {
 			g.softdrop();
 		else reward = 254;
 		break;
+	case 9:
+		g.rotate(2);
+		break;
 	default:
 		break;
 	}
@@ -498,22 +503,23 @@ PyObject* step(PyObject* ,PyObject *args) {
 		state[i + 12] = (g.board[9 + i % 21][i / 21] + 1) > 0;
 	}
 	//active
-	for (size_t i = 0; i < 210; i++)
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 222] = ((9 + i % 21) > g.y) && ((4 + i % 21) < g.y) && ((i / 21) > g.x) && (g.x + 5 > (i / 21))?(g.piecedefs[g.active][g.rotation][(8 + i % 21) - g.y][((i / 21)-1 - g.x)] + 1) > 0:0;
+		state[i + 222] = ((9 + i % 21) >= g.y) && ((6 + i % 21) <= g.y) && (((i / 21)- g.x >= 0) && g.x + 3 -(i / 21)>= 0) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - g.y][((i / 21) - g.x)] + 1) > 0: 0;
 	}
 	//shadow
-	for (size_t i = 0; i < 210; i++)
+	int ny = g.y + g.softdropdist();
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 432] = ((10 + i % 21) > (g.y + g.softdropdist())) && ((5 + i % 21) < (g.y + g.softdropdist())) && ((i / 21) > g.x) && (g.x + 5 > (i / 21)) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (g.y+g.softdropdist())][((i / 21) - 1 - g.x)] + 1) > 0:0;
+		state[i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21)- g.x >= 0) && (g.x + 3 -(i / 21)>= 0) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (ny)][((i / 21) - g.x)] + 1) > 0:0;
 	}
-		for (size_t j = 0; j < 4; j++)
+	for (size_t j = 0; j < 4; j++)
+	{
+		for (size_t k = 0; k < 4; k++)
 		{
-			for (size_t k = 0; k < 4; k++)
-			{
-				state[j * 4 + 642 + k] = g.held_piece!=-1?((g.piecedefs[g.held_piece][0][k][j] + 1) > 0):0;
-			}
+			state[j * 4 + 642 + k] = g.held_piece != -1 ? ((g.piecedefs[g.held_piece][0][k][j] + 1) > 0) : 0;
 		}
+	}
 	
 	for (size_t i = 0; i < 5; i++)
 	{

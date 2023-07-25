@@ -406,9 +406,11 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	if (!PyArg_ParseTuple(args, "i|i", &pwh, &val))
 		return NULL;
 	cinit(pwh, val);
-	const npy_intp dim = 1476;
+	server.stored_attack = 0;
+	const npy_intp dim = 1477;
 	const npy_intp* dims = &dim;
-	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * 1476);
+	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * dim);
+	state[1476] = server.stored_attack;
 	state[0] = g.cleared;
 	state[1] = g.x+2;
 	state[2] = g.y;
@@ -422,18 +424,19 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	}
 	for (size_t i = 0; i < 210; i++)
 	{
-		state[i + 12] = g.board[9+i % 21][ i / 21]+1;
+		state[i + 12] = g.board[9+i % 21][ i / 21]+1>0;
 		//std::cout << state[i + 12] << " ";
 	}
 	//active
-	for (size_t i = 0; i < 210; i++)
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 222] = ((9 + i % 21) > g.y) && ((4 + i % 21) < g.y) && ((i / 21) > g.x) && (g.x + 5 > (i / 21)) ? (g.piecedefs[g.active][g.rotation][(8 + i % 21) - g.y][((i / 21) - 1 - g.x)] + 1) > 0:0;
+		state[i + 222] = ((9 + i % 21) >= g.y) && ((6 + i % 21) <= g.y) && ((i / 21) - g.x >= 0) && (g.x + 3 -(i / 21)>= 0) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - g.y][((i / 21) - g.x)] + 1) > 0: 0;
 	}
 	//shadow
-	for (size_t i = 0; i < 210; i++)
+	int ny = g.y + g.softdropdist();
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 432] = ((10 + i % 21) > (g.y + g.softdropdist())) && ((5 + i % 21) < (g.y + g.softdropdist())) && ((i / 21) > g.x) && (g.x + 5 > (i / 21)) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (g.y + g.softdropdist())][((i / 21) - 1 - g.x)] + 1) > 0:0;
+		state[i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - g.x >= 0) && (g.x + 3 -(i / 21)>= 0) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (ny)][((i / 21) - g.x)] + 1) > 0:0;
 	}
 	for (size_t j = 0; j < 4; j++)
 	{
@@ -466,18 +469,19 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	}
 	for (size_t i = 0; i < 210; i++)
 	{
-		state[738+i + 12] = g2.board[9 + i % 21][i / 21] + 1;
+		state[738+i + 12] = g2.board[9 + i % 21][i / 21] + 1>0;
 		//std::cout << state[738+i + 12] << " ";
 	}
 	//active
-	for (size_t i = 0; i < 210; i++)
+	for (int i = 0; i < 210; i++)
 	{
-		state[738+i + 222] = ((9 + i % 21) > g2.y) && ((4 + i % 21) < g2.y) && ((i / 21) > g2.x) && (g2.x + 5 > (i / 21)) ? (g2.piecedefs[g2.active][g2.rotation][(8 + i % 21) - g2.y][((i / 21) - 1 - g2.x)] + 1) > 0:0;
+		state[738 + i + 222] = ((9 + i % 21) >= g2.y) && ((6 + i % 21) <= g2.y) && ((i / 21) - g2.x >= 0) && (g2.x + 3 - (i / 21) >= 0) ? (g2.piecedefs[g2.active][g2.rotation][(9 + i % 21) - g2.y][((i / 21) - g2.x)] + 1) > 0: 0;
 	}
 	//shadow
-	for (size_t i = 0; i < 210; i++)
+	ny = g2.y + g2.softdropdist();
+	for (int i = 0; i < 210; i++)
 	{
-		state[738+i + 432] = ((10 + i % 21) > (g2.y + g2.softdropdist())) && ((5 + i % 21) < (g2.y + g2.softdropdist())) && ((i / 21) > g2.x) && (g2.x + 5 > (i / 21)) ? (g2.piecedefs[g2.active][g2.rotation][(9 + i % 21) - (g2.y + g2.softdropdist())][((i / 21) - 1 - g2.x)] + 1) > 0:0;
+		state[738 + i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - g2.x >= 0) && (g2.x + 3 - (i / 21) >= 0) ? (g2.piecedefs[g2.active][g2.rotation][(9 + i % 21) - (ny)][((i / 21) - g2.x)] + 1) > 0:0;
 	}
 	for (size_t j = 0; j < 4; j++)
 	{
@@ -497,7 +501,7 @@ PyObject* reset(PyObject* self, PyObject* args) {
 			}
 		}
 	}
-	PyObject* ret = PyArray_SimpleNewFromData(1, dims, NPY_UINT8, state);
+	PyObject* ret = PyArray_SimpleNewFromData(1, dims, NPY_INT8, state);
 	PyArray_ENABLEFLAGS((PyArrayObject*)ret, NPY_ARRAY_OWNDATA);
 	//free(state);
 	return ret;
@@ -512,7 +516,7 @@ PyObject* step(PyObject* ,PyObject *args) {
 	{
 	case 0:
 		if (g.hold_used) {
-			reward = 254;
+			reward = 125;
 		}
 		else
 		{
@@ -532,34 +536,34 @@ PyObject* step(PyObject* ,PyObject *args) {
 		x = g.x;
 		g.move(0, -1);
 		if (x == g.x) {
-			reward = 254;
+			reward = 125;
 		}
 		break;
 	case 5:
 		x = g.x;
 		g.move(0, 1);
 		if (x == g.x) {
-			reward = 254;
+			reward = 125;
 		}
 		break;
 	case 6:
 		x = g.x;
 		g.move(1, -1);
 		if (x == g.x) {
-			reward = 254;
+			reward = 125;
 		}
 		break;
 	case 7:
 		x = g.x;
 		g.move(1, 1);
 		if (x == g.x) {
-			reward = 254;
+			reward = 125;
 		}
 		break;
 	case 8:
 		if (g.softdropdist() > 0)
 			g.softdrop();
-		else reward = 254;
+		else reward = 125;
 		break;
 	case 9:
 		g.rotate(2);
@@ -572,7 +576,7 @@ PyObject* step(PyObject* ,PyObject *args) {
 	{
 	case 0:
 		if (g2.hold_used) {
-			reward2 = 254;
+			reward2 = 125;
 		}
 		else
 		{
@@ -592,34 +596,34 @@ PyObject* step(PyObject* ,PyObject *args) {
 		x = g2.x;
 		g2.move(0, -1);
 		if (x == g2.x) {
-			reward2 = 254;
+			reward2 = 125;
 		}
 		break;
 	case 5:
 		x = g2.x;
 		g2.move(0, 1);
 		if (x == g2.x) {
-			reward2 = 254;
+			reward2 = 125;
 		}
 		break;
 	case 6:
 		x = g2.x;
 		g2.move(1, -1);
 		if (x == g2.x) {
-			reward2 = 254;
+			reward2 = 125;
 		}
 		break;
 	case 7:
 		x = g2.x;
 		g2.move(1, 1);
 		if (x == g2.x) {
-			reward2 = 254;
+			reward2 = 125;
 		}
 		break;
 	case 8:
 		if (g2.softdropdist() > 0)
 			g2.softdrop();
-		else reward2 = 254;
+		else reward2 = 125;
 		break;
 	case 9:
 		g2.rotate(2);
@@ -627,17 +631,18 @@ PyObject* step(PyObject* ,PyObject *args) {
 	default:
 		break;
 	}
-	const npy_intp dim = 1476;
+	const npy_intp dim = 1477;
 	const npy_intp* dims = &dim;
 	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * dim);
+	state[1476] = server.stored_attack;
 	if (g.game_over){
-		state[0] = 255;
-		reward = 253;
+		state[0] = 127;
+		reward2 = 126;
 	}
 	else if (reward) {
 		state[0] = reward;
 	}else {
-		state[0] = g.cleared;
+		state[0] = g.cleared+g.spin;
 	}
 
 	state[1] = g.x+2;
@@ -648,47 +653,50 @@ PyObject* step(PyObject* ,PyObject *args) {
 	state[6] = g.held_piece+1;
 	for (size_t i = 0; i < 5; i++)
 	{
-		state[i + 7] = g.queue[i]+1;
+		state[i + 7] = g.queue[i] + 1;
 	}
 	for (size_t i = 0; i < 210; i++)
 	{
-		state[i + 12] = (g.board[9 + i % 21][i / 21] + 1) > 0;
+		state[i + 12] = g.board[9 + i % 21][i / 21] + 1>0;
+		//std::cout << state[i + 12] << " ";
 	}
 	//active
-	for (size_t i = 0; i < 210; i++)
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 222] = ((9 + i % 21) > g.y) && ((4 + i % 21) < g.y) && ((i / 21) > g.x) && (g.x + 5 > (i / 21))?(g.piecedefs[g.active][g.rotation][(8 + i % 21) - g.y][((i / 21)-1 - g.x)] + 1) > 0:0;
+		state[i + 222] = ((9 + i % 21) >= g.y) && ((6 + i % 21) <= g.y) && ((i / 21) - g.x >= 0) && (g.x + 3 - (i / 21) >= 0) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - g.y][((i / 21) - g.x)] + 1) > 0: 0;
 	}
 	//shadow
-	for (size_t i = 0; i < 210; i++)
+	int ny = g.y + g.softdropdist();
+	for (int i = 0; i < 210; i++)
 	{
-		state[i + 432] = ((10 + i % 21) > (g.y + g.softdropdist())) && ((5 + i % 21) < (g.y + g.softdropdist())) && ((i / 21) > g.x) && (g.x + 5 > (i / 21)) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (g.y+g.softdropdist())][((i / 21) - 1 - g.x)] + 1) > 0:0;
+		state[i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - g.x >= 0) && (g.x + 3 - (i / 21) >= 0) ? (g.piecedefs[g.active][g.rotation][(9 + i % 21) - (ny)][((i / 21) - g.x)] + 1) > 0:0;
 	}
-		for (size_t j = 0; j < 4; j++)
+	for (size_t j = 0; j < 4; j++)
+	{
+		for (size_t k = 0; k < 4; k++)
 		{
-			for (size_t k = 0; k < 4; k++)
-			{
-				state[j * 4 + 642 + k] = g.held_piece!=-1?((g.piecedefs[g.held_piece][0][k][j] + 1) > 0):0;
-			}
+			state[j * 4 + 642 + k] = g.held_piece != -1 ? ((g.piecedefs[g.held_piece][0][k][j] + 1) > 0) : 0;
 		}
-	
+	}
+
 	for (size_t i = 0; i < 5; i++)
 	{
 		for (size_t j = 0; j < 4; j++)
 		{
 			for (size_t k = 0; k < 4; k++)
 			{
-				state[i*16+j*4+658+k] = ((g.piecedefs[g.queue[i]][0][k][j] + 1) > 0);
+				state[i * 16 + j * 4 + 658 + k] = ((g.piecedefs[g.queue[i]][0][k][j] + 1) > 0);
 			}
 		}
 	}
 	if (g2.game_over) {
-		state[738+0] = 255;
-		state[0] = 253;
+		state[738+0] = 127;
+		if(state[0]!=127)
+			state[0] = 126;
 	}else if (reward2) {
 		state[738] = reward2;
 	}else {
-		state[738+0] = g2.cleared;
+		state[738+0] = g2.cleared+g2.spin;
 	}
 
 	state[738+1] = g2.x + 2;
@@ -699,27 +707,29 @@ PyObject* step(PyObject* ,PyObject *args) {
 	state[738+6] = g2.held_piece + 1;
 	for (size_t i = 0; i < 5; i++)
 	{
-		state[738+i + 7] = g2.queue[i] + 1;
+		state[738 + i + 7] = g2.queue[i] + 1;
 	}
 	for (size_t i = 0; i < 210; i++)
 	{
-		state[738+i + 12] = (g2.board[9 + i % 21][i / 21] + 1) > 0;
+		state[738 + i + 12] = g2.board[9 + i % 21][i / 21] + 1>0;
+		//std::cout << state[738+i + 12] << " ";
 	}
 	//active
-	for (size_t i = 0; i < 210; i++)
+	for (int i = 0; i < 210; i++)
 	{
-		state[738+i + 222] = ((9 + i % 21) > g2.y) && ((4 + i % 21) < g2.y) && ((i / 21) > g2.x) && (g2.x + 5 > (i / 21)) ? (g2.piecedefs[g2.active][g2.rotation][(8 + i % 21) - g2.y][((i / 21) - 1 - g2.x)] + 1) > 0:0;
+		state[738 + i + 222] = ((9 + i % 21) >= g2.y) && ((6 + i % 21) <= g2.y) && ((i / 21) - g2.x >= 0) && (g2.x + 3 - (i / 21) >= 0) ? (g2.piecedefs[g2.active][g2.rotation][(9 + i % 21) - g2.y][((i / 21) - g2.x)] + 1) > 0: 0;
 	}
 	//shadow
-	for (size_t i = 0; i < 210; i++)
+	ny = g2.y + g2.softdropdist();
+	for (int i = 0; i < 210; i++)
 	{
-		state[738+i + 432] = ((10 + i % 21) > (g2.y + g2.softdropdist())) && ((5 + i % 21) < (g2.y + g2.softdropdist())) && ((i / 21) > g2.x) && (g2.x + 5 > (i / 21)) ? (g2.piecedefs[g2.active][g2.rotation][(9 + i % 21) - (g2.y + g2.softdropdist())][((i / 21) - 1 - g2.x)] + 1) > 0:0;
+		state[738 + i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - g2.x >= 0) && (g2.x + 3 - (i / 21) >= 0) ? (g2.piecedefs[g2.active][g2.rotation][(9 + i % 21) - (ny)][((i / 21) - g2.x)] + 1) > 0:0;
 	}
 	for (size_t j = 0; j < 4; j++)
 	{
 		for (size_t k = 0; k < 4; k++)
 		{
-			state[738+j * 4 + 642 + k] = g2.held_piece != -1 ? ((g2.piecedefs[g2.held_piece][0][k][j] + 1) > 0) : 0;
+			state[738 + j * 4 + 642 + k] = g2.held_piece != -1 ? ((g2.piecedefs[g2.held_piece][0][k][j] + 1) > 0) : 0;
 		}
 	}
 
@@ -729,11 +739,11 @@ PyObject* step(PyObject* ,PyObject *args) {
 		{
 			for (size_t k = 0; k < 4; k++)
 			{
-				state[738+i * 16 + j * 4 + 658 + k] = ((g2.piecedefs[g2.queue[i]][0][k][j] + 1) > 0);
+				state[738 + i * 16 + j * 4 + 658 + k] = ((g2.piecedefs[g2.queue[i]][0][k][j] + 1) > 0);
 			}
 		}
 	}
-	PyObject* ret=PyArray_SimpleNewFromData(1, dims, NPY_UINT8, state);
+	PyObject* ret=PyArray_SimpleNewFromData(1, dims, NPY_INT8, state);
 	PyArray_ENABLEFLAGS((PyArrayObject*)ret, NPY_ARRAY_OWNDATA);
 	return ret;
 	
