@@ -54,12 +54,14 @@ class game_client : public game {
 public:
 	game_server *server;
 	int port;
+	int action_count=0;
 	game_client(game_server &s, int p) {
 		server = &s;
 		port = p;
 	}
 	void harddrop() {
 		game::harddrop();
+		action_count = 0;
 
 		if (combo)
 			server->send(port,attack);
@@ -407,15 +409,18 @@ PyObject* reset(PyObject* self, PyObject* args) {
 		return NULL;
 	cinit(pwh, val);
 	server.stored_attack = 0;
+	g.action_count = 0;
+	g2.action_count = 0;
 	const npy_intp dim = 1477;
 	const npy_intp* dims = &dim;
 	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * dim);
 	state[1476] = server.stored_attack;
 	state[0] = g.cleared;
-	state[1] = g.x+2;
-	state[2] = g.y;
-	state[3] = g.rotation;
-	state[4] = g.hold_used;
+	state[1] = g.action_count;//g.x+2;
+
+	state[2] = g.b2b;//g.y;
+	state[3] = g.hold_used;
+	state[4] = g.rotation;
 	state[5] = g.active+1;
 	state[6] = g.held_piece+1;
 	for (size_t i = 0; i < 5; i++)
@@ -457,10 +462,10 @@ PyObject* reset(PyObject* self, PyObject* args) {
 		}
 	}
 	state[738+0] = g2.cleared;
-	state[738+1] = g2.x + 2;
-	state[738+2] = g2.y;
-	state[738+3] = g2.rotation;
-	state[738+4] = g2.hold_used;
+	state[738+1] = g2.action_count;//g2.x+2;
+	state[738+2] = g2.b2b;//g2.y;
+	state[738+3] = g2.hold_used;
+	state[738+4] = g2.rotation;
 	state[738+5] = g2.active + 1;
 	state[738+6] = g2.held_piece + 1;
 	for (size_t i = 0; i < 5; i++)
@@ -512,16 +517,12 @@ PyObject* step(PyObject* ,PyObject *args) {
 		return NULL;
 	int reward = 0;
 	int reward2 = 0;
+	g.action_count++;
+	g2.action_count++;
 	switch (x)
 	{
 	case 0:
-		if (g.hold_used) {
-			reward = 125;
-		}
-		else
-		{
-			g.hold();
-		}
+		g.hold();
 		break;
 	case 1:
 		g.harddrop();
@@ -535,35 +536,22 @@ PyObject* step(PyObject* ,PyObject *args) {
 	case 4:
 		x = g.x;
 		g.move(0, -1);
-		if (x == g.x) {
-			reward = 125;
-		}
 		break;
 	case 5:
 		x = g.x;
 		g.move(0, 1);
-		if (x == g.x) {
-			reward = 125;
-		}
 		break;
 	case 6:
 		x = g.x;
 		g.move(1, -1);
-		if (x == g.x) {
-			reward = 125;
-		}
 		break;
 	case 7:
 		x = g.x;
 		g.move(1, 1);
-		if (x == g.x) {
-			reward = 125;
-		}
 		break;
 	case 8:
 		if (g.softdropdist() > 0)
 			g.softdrop();
-		else reward = 125;
 		break;
 	case 9:
 		g.rotate(2);
@@ -571,17 +559,16 @@ PyObject* step(PyObject* ,PyObject *args) {
 	default:
 		break;
 	}
-
+	if (g.action_count == 10)
+	{
+		g.harddrop();
+		reward = 125;
+	}
 	switch (y)
 	{
 	case 0:
-		if (g2.hold_used) {
-			reward2 = 125;
-		}
-		else
-		{
-			g2.hold();
-		}
+		g2.hold();
+		
 		break;
 	case 1:
 		g2.harddrop();
@@ -595,35 +582,22 @@ PyObject* step(PyObject* ,PyObject *args) {
 	case 4:
 		x = g2.x;
 		g2.move(0, -1);
-		if (x == g2.x) {
-			reward2 = 125;
-		}
 		break;
 	case 5:
 		x = g2.x;
 		g2.move(0, 1);
-		if (x == g2.x) {
-			reward2 = 125;
-		}
 		break;
 	case 6:
 		x = g2.x;
 		g2.move(1, -1);
-		if (x == g2.x) {
-			reward2 = 125;
-		}
 		break;
 	case 7:
 		x = g2.x;
 		g2.move(1, 1);
-		if (x == g2.x) {
-			reward2 = 125;
-		}
 		break;
 	case 8:
 		if (g2.softdropdist() > 0)
 			g2.softdrop();
-		else reward2 = 125;
 		break;
 	case 9:
 		g2.rotate(2);
@@ -631,6 +605,12 @@ PyObject* step(PyObject* ,PyObject *args) {
 	default:
 		break;
 	}
+	if (g2.action_count == 10)
+	{
+		g2.harddrop();
+		reward2 = 125;
+	}
+
 	const npy_intp dim = 1477;
 	const npy_intp* dims = &dim;
 	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * dim);
@@ -645,10 +625,11 @@ PyObject* step(PyObject* ,PyObject *args) {
 		state[0] = g.cleared+g.spin;
 	}
 
-	state[1] = g.x+2;
-	state[2] = g.y;
-	state[3] = g.rotation;
-	state[4] = g.hold_used;
+	state[1] = g.action_count;//g.x+2;
+
+	state[2] = g.b2b;//g.y;
+	state[3] = g.hold_used;
+	state[4] = g.rotation;
 	state[5] = g.active+1;
 	state[6] = g.held_piece+1;
 	for (size_t i = 0; i < 5; i++)
@@ -699,10 +680,10 @@ PyObject* step(PyObject* ,PyObject *args) {
 		state[738+0] = g2.cleared+g2.spin;
 	}
 
-	state[738+1] = g2.x + 2;
-	state[738+2] = g2.y;
-	state[738+3] = g2.rotation;
-	state[738+4] = g2.hold_used;
+	state[738+1] = g2.action_count;//g2.x+2;
+	state[738+2] = g2.b2b;//g2.y;
+	state[738+3] = g2.hold_used;
+	state[738+4] = g2.rotation;
 	state[738+5] = g2.active + 1;
 	state[738+6] = g2.held_piece + 1;
 	for (size_t i = 0; i < 5; i++)
@@ -749,6 +730,63 @@ PyObject* step(PyObject* ,PyObject *args) {
 	
 	
 }
+PyObject* set(PyObject*, PyObject* args) {
+	PyArrayObject* x;
+
+	if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &x)) {
+		return NULL;
+	}
+
+	npy_intp* shape = PyArray_SHAPE(x);
+
+	int8_t* arr = (int8_t*)PyArray_DATA(x);
+	if (arr == NULL)  return NULL;
+	if (shape[0] != 444) {
+		for (size_t i = 0; i < shape[0]; i++)
+		{
+			std::cout << (int)arr[i] << " ";
+		}
+		std::cout << "\n"; 
+		PyErr_SetString(PyExc_ValueError, "wrong length");
+		return NULL;
+	}
+	g.reset();
+	g2.reset();
+	for (size_t i = 0; i < shape[0]; i++)
+	{
+		std::cout << (int)arr[i] << " ";
+	}
+	std::cout << "\n";
+	server.stored_attack = arr[0];
+	g.cleared = 0;
+	
+	g.hold_used = arr[3];
+	g.rotation = arr[4];
+	g.active = 6;
+	g.held_piece = arr[6]-1;
+	for (size_t i = 0; i < 5; i++)
+	{
+		g.queue[i]= arr[i + 7]-1;
+	}
+	for (size_t i = 0; i < 210; i++)
+	{
+		g.board[9 + i % 21][i / 21] = arr[i + 12]-1;
+	}
+	g2.hold_used = arr[222+3];
+	g2.rotation = arr[222+4];
+	g2.active = 6;
+	g2.held_piece = arr[222+6] - 1;
+	for (size_t i = 0; i < 5; i++)
+	{
+		g2.queue[i] = arr[222+i + 7] - 1;
+	}
+	for (size_t i = 0; i < 210; i++)
+	{
+		g2.board[9 + i % 21][i / 21] = arr[222+i + 12] - 1;
+	}
+	Py_RETURN_NONE;
+
+}
 PyObject* close(PyObject* self, PyObject* Py_UNUSED) {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
@@ -779,6 +817,8 @@ static PyMethodDef Methods[] = {
 	 "Reset everything"},
 	 {"step",  step, METH_VARARGS,
 	 "Take action and return reward&state"},
+	 {"set",  set, METH_VARARGS,
+	 "Set board state"},
 	 {"close",  close, METH_NOARGS,
 	 "close everything"},
 	 {"render",  render, METH_NOARGS,

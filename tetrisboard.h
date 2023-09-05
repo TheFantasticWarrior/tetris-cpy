@@ -25,7 +25,6 @@ class game
 		bool b2b=0;
 		int attack = 0;
 		int combo = 0;
-		std::mt19937 gen;
 		void set_seed(int seed);
 
 		void new_piece();
@@ -287,14 +286,21 @@ class game
 		bool spin = 0;
 		bool kick=0;
 	private:
+
+		std::mt19937 gen;
+		std::mt19937 gen2;
+		int next_seed;
 		bool seeded = false;
 		std::vector<int> hidden_queue;
 		void bag_randomizer();
 		void place();
 		//int place_ghost(int x,int y)
-
+		int check_tetris_hole(int y, int* filled, int* bottom_filled, int* empty);
+		int check_tsd_hole(int y, int* nfilled, int* xloc);
+		int check_tst_hole(int y, int x, int* filled);
+		int check_stsd_hole(int y, int x, int* nfilled);
 		void check_clear();
-    
+		void eval_board();
 	
 };
 #endif // !boardh

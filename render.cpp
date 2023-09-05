@@ -363,10 +363,10 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	const npy_intp* dims = &dim;
 	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * 738);
 	state[0] = g.cleared;
-	state[1] = g.x+2;
-	state[2] = g.y;
-	state[3] = g.rotation;
-	state[4] = g.hold_used;
+	state[1] = g.combo;//g.x+2;
+	state[2] = g.b2b;//g.y;
+	state[3] = g.hold_used;
+	state[4] = g.rotation;
 	state[5] = g.active+1;
 	state[6] = g.held_piece+1;
 	for (size_t i = 0; i < 5; i++)
@@ -488,10 +488,11 @@ PyObject* step(PyObject* ,PyObject *args) {
 		state[0] = g.cleared+g.spin;
 	}
 
-	state[1] = g.x+2;
-	state[2] = g.y;
-	state[3] = g.rotation;
-	state[4] = g.hold_used;
+	state[1] = g.combo;//g.x+2;
+
+	state[2] = g.b2b;//g.y;
+	state[3] = g.hold_used;
+	state[4] = g.rotation;
 	state[5] = g.active+1;
 	state[6] = g.held_piece+1;
 	for (size_t i = 0; i < 5; i++)
