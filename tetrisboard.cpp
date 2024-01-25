@@ -15,7 +15,7 @@
 
 
 
-
+/*
 int game::check_tetris_hole(int y,int *filled,int* bottom_filled,int *empty)
 {
 	int* filled = 0;
@@ -240,7 +240,7 @@ void game::eval_board()
 		i++;
 	}
 	
-}
+}*/
 
 void game::check_clear() {
 	int clear[4]={-1,-1,-1,-1};
@@ -272,6 +272,7 @@ void game::check_clear() {
 			if (board[row][j*5] == 7)
 			{
 				garbage++;
+				gheight--;
 				goto end;
 			}
 		}
@@ -377,7 +378,7 @@ void game::recieve(int incoming) {
 		std::copy(board[incoming], board[30], board[0]);
 		std::uniform_int_distribution<>dis(0, 9);
 		int x = dis(gen);
-		bool thole = dis(gen2) < 2;
+		bool thole = dis(gen2) < 1;
 		for (size_t j = 0; j < incoming; j++)
 		{
 			for (size_t i = 0; i < 10; i++)
@@ -385,6 +386,7 @@ void game::recieve(int incoming) {
 				board[29 - j][i] = (i == x || (incoming >= 2 && thole && (j == incoming - 1) && (i == x - 1 || i == x + 1))) ? -1 : 7;
 			}
 		}
+		gheight += incoming;
 	}
 
 }
@@ -407,26 +409,32 @@ void game::set_seed(int seed) {
 	
 	gen2.seed(rd());
 }
+void game::random_recv(int max) {
+	int recv;
+	int curr = 0;
+	std::uniform_int_distribution<>dis(0, max);
+	recv = dis(gen2);
+	if (recv == 0) {
+		for (size_t i = 0; i < 4; i++)
+		{
+			recieve(1);
+		}
+		return;
+	}
+	std::uniform_int_distribution<>dis2(0, 1);
+	int b2bon;
+	while (curr < recv) {
+		b2bon = dis2(gen2);
+		recieve(b2bon + 4);
+		curr += b2bon + 4;
+	}
+	return;
+}
 void game::reset(){
 	if (!seeded)set_seed(0);
 	else set_seed(next_seed);
 	memset(board,-1,sizeof(board));
-	std::uniform_int_distribution<>dis(0, 6);
-	recieve(dis(gen2));
-	std::uniform_int_distribution<>dis2(0, 1);
-	recieve(dis2(gen2) * 4);
-	for (size_t j = 0; j < 2; j++)
-	{
-		if (board[29][j * 5] == 7)
-		{
-			goto end;
-		}
-	}
-	for (size_t i = 0; i < 4; i++)
-	{
-		recieve(1);
-	}
-	end:
+	gheight = 0;
 	game_over = 0;
 	cleared = 0;
 	recieved = 0;

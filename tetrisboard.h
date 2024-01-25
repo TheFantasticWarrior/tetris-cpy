@@ -25,7 +25,11 @@ class game
 		bool b2b=0;
 		int attack = 0;
 		int combo = 0;
+		int gheight=0;
 		void set_seed(int seed);
+
+		void random_recv(int max);
+
 
 		void new_piece();
 		void recieve(int incoming);

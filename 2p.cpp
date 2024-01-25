@@ -59,6 +59,10 @@ public:
 		server = &s;
 		port = p;
 	}
+	void reset() {
+		game::reset();
+		game::random_recv(3);
+	}
 	void harddrop() {
 		game::harddrop();
 		action_count = 0;
@@ -418,7 +422,7 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	state[0] = g.cleared;
 	state[1] = g.action_count;//g.x+2;
 
-	state[2] = g.b2b;//g.y;
+	state[2] = g.gheight;//g.y;
 	state[3] = g.hold_used;
 	state[4] = g.rotation;
 	state[5] = g.active+1;
@@ -463,7 +467,7 @@ PyObject* reset(PyObject* self, PyObject* args) {
 	}
 	state[738+0] = g2.cleared;
 	state[738+1] = g2.action_count;//g2.x+2;
-	state[738+2] = g2.b2b;//g2.y;
+	state[738+2] = g2.gheight;//g2.y;
 	state[738+3] = g2.hold_used;
 	state[738+4] = g2.rotation;
 	state[738+5] = g2.active + 1;
@@ -519,115 +523,139 @@ PyObject* step(PyObject* ,PyObject *args) {
 	int reward2 = 0;
 	g.action_count++;
 	g2.action_count++;
-	switch (x)
-	{
-	case 0:
-		g.hold();
-		break;
-	case 1:
-		g.harddrop();
-		break;
-	case 2:
-		g.rotate(1);
-		break;
-	case 3:
-		g.rotate(-1);
-		break;
-	case 4:
-		x = g.x;
-		g.move(0, -1);
-		break;
-	case 5:
-		x = g.x;
-		g.move(0, 1);
-		break;
-	case 6:
-		x = g.x;
-		g.move(1, -1);
-		break;
-	case 7:
-		x = g.x;
-		g.move(1, 1);
-		break;
-	case 8:
-		if (g.softdropdist() > 0)
-			g.softdrop();
-		break;
-	case 9:
-		g.rotate(2);
-		break;
-	default:
-		break;
-	}
 	if (g.action_count == 10)
 	{
 		g.harddrop();
 		reward = 125;
+	} else {
+		switch (x)
+		{
+		case 0:
+			g.hold();
+			break;
+		case 1:
+			g.harddrop();
+			break;
+		case 2:
+			g.rotate(1);
+			break;
+		case 3:
+			g.rotate(-1);
+			break;
+		case 4:
+			//x = g.x;
+			g.move(0, -1);
+			break;
+		case 5:
+			//x = g.x;
+			g.move(0, 1);
+			break;
+		case 6:
+			//x = g.x;
+			g.move(1, -1);
+			break;
+		case 7:
+			//x = g.x;
+			g.move(1, 1);
+			break;
+		case 8:
+			if (g.softdropdist() > 0)
+				g.softdrop();
+			break;
+		case 9:
+			g.rotate(2);
+			break;
+		default:
+			break;
+		}
 	}
-	switch (y)
-	{
-	case 0:
-		g2.hold();
-		
-		break;
-	case 1:
-		g2.harddrop();
-		break;
-	case 2:
-		g2.rotate(1);
-		break;
-	case 3:
-		g2.rotate(-1);
-		break;
-	case 4:
-		x = g2.x;
-		g2.move(0, -1);
-		break;
-	case 5:
-		x = g2.x;
-		g2.move(0, 1);
-		break;
-	case 6:
-		x = g2.x;
-		g2.move(1, -1);
-		break;
-	case 7:
-		x = g2.x;
-		g2.move(1, 1);
-		break;
-	case 8:
-		if (g2.softdropdist() > 0)
-			g2.softdrop();
-		break;
-	case 9:
-		g2.rotate(2);
-		break;
-	default:
-		break;
-	}
+	
 	if (g2.action_count == 10)
 	{
 		g2.harddrop();
 		reward2 = 125;
+	}else {
+		switch (y)
+		{
+		case 0:
+			g2.hold();
+
+			break;
+		case 1:
+			g2.harddrop();
+			break;
+		case 2:
+			g2.rotate(1);
+			break;
+		case 3:
+			g2.rotate(-1);
+			break;
+		case 4:
+			x = g2.x;
+			g2.move(0, -1);
+			break;
+		case 5:
+			x = g2.x;
+			g2.move(0, 1);
+			break;
+		case 6:
+			x = g2.x;
+			g2.move(1, -1);
+			break;
+		case 7:
+			x = g2.x;
+			g2.move(1, 1);
+			break;
+		case 8:
+			if (g2.softdropdist() > 0)
+				g2.softdrop();
+			break;
+		case 9:
+			g2.rotate(2);
+			break;
+		default:
+			break;
+		}
 	}
+	
 
 	const npy_intp dim = 1477;
 	const npy_intp* dims = &dim;
 	int8_t* state = (int8_t*)malloc(sizeof(int8_t) * dim);
 	state[1476] = server.stored_attack;
-	if (g.game_over){
-		state[0] = 127;
-		reward2 = 126;
-	}
-	else if (reward) {
-		state[0] = reward;
-	}else {
-		state[0] = g.cleared+g.spin;
-	}
+	if (g.game_over||g2.game_over){
+		if (g.game_over&&g2.game_over)
+		{
+			state[0] = 127;
+			state[738] = 127;
+		}
+		else if (g.game_over) {
+			state[0] = 127;
+			state[738] = 126;
 
+		}
+		else {
+			state[738 + 0] = 127;
+			state[0] = 126;
+		}
+	}
+	else {
+		if (reward != 0) {
+			state[0] = reward;
+		}
+		else {
+			state[0] = g.cleared + g.spin;
+		}
+		if (reward2 != 0) {
+			state[738] = reward2;
+		}
+		else {
+			state[738 + 0] = g2.cleared + g2.spin;
+		}
+	}
 	state[1] = g.action_count;//g.x+2;
 
-	state[2] = g.b2b;//g.y;
+	state[2] = g.gheight;//g.y;
 	state[3] = g.hold_used;
 	state[4] = g.rotation;
 	state[5] = g.active+1;
@@ -670,18 +698,10 @@ PyObject* step(PyObject* ,PyObject *args) {
 			}
 		}
 	}
-	if (g2.game_over) {
-		state[738+0] = 127;
-		if(state[0]!=127)
-			state[0] = 126;
-	}else if (reward2) {
-		state[738] = reward2;
-	}else {
-		state[738+0] = g2.cleared+g2.spin;
-	}
+	
 
 	state[738+1] = g2.action_count;//g2.x+2;
-	state[738+2] = g2.b2b;//g2.y;
+	state[738+2] = g2.gheight;//g2.y;
 	state[738+3] = g2.hold_used;
 	state[738+4] = g2.rotation;
 	state[738+5] = g2.active + 1;
