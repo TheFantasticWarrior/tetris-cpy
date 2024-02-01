@@ -11,6 +11,7 @@ int mod(int x, int y);
 class game
 {
 	public:
+		game() {};
 		int game_over;
 		int cleared;
 		int board[ROWS][COLUMNS];
@@ -32,7 +33,7 @@ class game
 
 
 		void new_piece();
-		void recieve(int incoming);
+		void recieve(std::vector<int> list);
 
 		int softdropdist();
 
@@ -45,6 +46,28 @@ class game
 		void hold();
 		void move(bool das,int d);
 		void rotate(int direction);
+		game(const game& other) {
+			// Copy scalar values
+			game_over = other.game_over;
+			cleared = other.cleared;
+			active = other.active;
+			rotation = other.rotation;
+			x = other.x;
+			y = other.y;
+			recieved = other.recieved;
+			held_piece = other.held_piece;
+			hold_used = other.hold_used;
+			b2b = other.b2b;
+			attack = other.attack;
+			combo = other.combo;
+			gheight = other.gheight;
+			spin = other.spin;
+			kick = other.kick;
+
+			copy_board(board, other.board);
+			hidden_queue.assign(other.hidden_queue.begin(), other.hidden_queue.end());
+
+		}
 		int piecedefs [7][4][4][4]= { //piece(SZJLTOI), rotation, position in board
 
 		{ // S
@@ -299,12 +322,12 @@ class game
 		void bag_randomizer();
 		void place();
 		//int place_ghost(int x,int y)
-		int check_tetris_hole(int y, int* filled, int* bottom_filled, int* empty);
+		/*int check_tetris_hole(int y, int* filled, int* bottom_filled, int* empty);
 		int check_tsd_hole(int y, int* nfilled, int* xloc);
 		int check_tst_hole(int y, int x, int* filled);
 		int check_stsd_hole(int y, int x, int* nfilled);
+		void eval_board();*/
 		void check_clear();
-		void eval_board();
-	
+		void copy_board(int dest[ROWS][COLUMNS], const int src[ROWS][COLUMNS]);
 };
 #endif // !boardh
