@@ -9,12 +9,10 @@ find_package(Python3 3.10 EXACT REQUIRED COMPONENTS Interpreter Development NumP
 include_directories(tetris ${SDL2_INCLUDE_DIRS})
 
 add_executable (play "ui.cpp" "tetrisboard.cpp" "tetrisboard.h" "config.h"  "inireader.h")
-add_executable (sdltest "SDLtest.cpp")
 python3_add_library(env MODULE "tetrisboard.cpp"  "render.cpp")
 python3_add_library(env2p MODULE "tetrisboard.cpp"  "2p.cpp")
 python3_add_library(sim MODULE "tetrisboard.cpp"  "sim.cpp")
 target_link_libraries(play ${SDL2_LIBRARIES})
-target_link_libraries(sdltest ${SDL2_LIBRARIES})
 
 target_include_directories(sim PRIVATE ${Python3_INCLUDE_DIRS} ${Python3_NumPy_INCLUDE_DIRS})
 target_link_libraries(sim PRIVATE ${SDL2_LIBRARIES} ${Python3_LIBRARIES})

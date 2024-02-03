@@ -415,6 +415,7 @@ public:
 	}
 	static void dealloc(game_renderer* self) {
 		self->c_close();
+		SDL_Quit();
 		Py_TYPE(self)->tp_free((PyObject*)self);
 		//delete self;
 	}
@@ -734,6 +735,9 @@ PyObject* game_renderer::render(game_renderer* self, PyObject* args) {
 			self->c_close();
 		}
 	}
+	else {
+		std::cout << "No Window open!\nUse create_window(render_mode,render_size) to create a window";
+	}
 
 	Py_RETURN_NONE;
 }
@@ -742,7 +746,7 @@ static PyTypeObject game_renderer_type = {
 	"sim.Renderer",  // name of the type
 	sizeof(game_renderer),         // size of the type
 	0,                             // itemsize, set to 0 for variable-sized objects
-	0,//(destructor)game_renderer::dealloc,  // tp_dealloc, destructor function
+	(destructor)game_renderer::dealloc,  // tp_dealloc, destructor function
 	0,                             // tp_print
 	0,                             // tp_getattr
 	0,                             // tp_setattr
