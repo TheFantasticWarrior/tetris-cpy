@@ -277,9 +277,9 @@ void draw(game &g,int xloc) {
 	color_from_rgb(0x666666);
 	bg.x += xloc;
 	SDL_RenderFillRect(renderer,&bg);
-	for (int_fast8_t i = 0; i < 10; i++)
+	for (int i = 0; i < 10; i++)
 	{
-		for (int_fast8_t j = 0; j < 21; j++)
+		for (int j = 0; j < 21; j++)
 		{
 			rect.x =1+ BOARDX+i * (block_size + 1)+xloc;
 			rect.y = -block_size/2+j * (block_size + 1);
@@ -291,13 +291,13 @@ void draw(game &g,int xloc) {
 		//std::cout << "\n";
 	}
 	// queue
-	for (int_fast8_t n = 0; n < 5; n++)
+	for (int n = 0; n < 5; n++)
 	{
 
 		color_from_rgb(colors[g.queue[n]+1]);
-		for (int_fast8_t i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 		{
-			for (int_fast8_t j = 0; j < 4; j++)
+			for (int j = 0; j < 4; j++)
 			{
 				rect.x = 4*BOARDX + i * (block_size + 1) + xloc;
 				rect.y = block_size*3*n+j * (block_size + 1);
@@ -313,9 +313,9 @@ void draw(game &g,int xloc) {
 	if (g.held_piece != -1)
 	{
 		color_from_rgb(colors[g.held_piece+1]);
-		for (int_fast8_t i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 		{
-			for (int_fast8_t j = 0; j < 4; j++)
+			for (int j = 0; j < 4; j++)
 			{
 				if (g.piecedefs[g.held_piece][0][j][i] != -1){
 					
@@ -330,9 +330,9 @@ void draw(game &g,int xloc) {
 	//active
 	if (active_piece)
 	{
-	for (int_fast8_t i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
-		for (int_fast8_t j = 0; j < 4; j++)
+		for (int j = 0; j < 4; j++)
 		{
 			rect.x = BOARDX + (g.x + i) * (block_size + 1) + xloc;
 			rect.y = block_size/2+(g.y - 10 + j) * (block_size + 1);
@@ -347,9 +347,9 @@ void draw(game &g,int xloc) {
 	}
 	else
 	{
-		for (int_fast8_t i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 		{
-			for (int_fast8_t j = 0; j < 4; j++)
+			for (int j = 0; j < 4; j++)
 			{
 				rect.x = BOARDX + (3 + i) * (block_size + 1) + xloc;
 				rect.y = block_size / 2 + (-1 + j) * (block_size + 1);
@@ -366,9 +366,9 @@ void draw(game &g,int xloc) {
 	//ghost
 	if (ghost){
 		ghosty= g.y+g.softdropdist();
-		for (int_fast8_t i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 		{
-			for (int_fast8_t j = 0; j < 4; j++)
+			for (int j = 0; j < 4; j++)
 			{
 				rect.x = BOARDX + (g.x + i) * (block_size + 1) + xloc;
 				rect.y = block_size/2+(ghosty - 10 + j) * (block_size + 1);

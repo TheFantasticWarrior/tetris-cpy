@@ -12,15 +12,15 @@ class game
 {
 	public:
 		game() {};
-		int game_over;
-		int cleared;
-		int board[ROWS][COLUMNS];
-		int active;
-		int rotation;
-		int x;
-		int y;
+		int game_over=0;
+		int cleared=0;
+		int board[ROWS][COLUMNS] = {};
+		int active=0;
+		int rotation=0;
+		int x=0;
+		int y=0;
 		int recieved = 0;
-		int queue[5];
+		int queue[5] = {};
 		int held_piece=-1;
 		bool hold_used = false;
 		bool b2b=0;
@@ -35,7 +35,7 @@ class game
 		void new_piece();
 		void recieve(std::vector<int> list);
 
-		int softdropdist();
+		int softdropdist() const;
 
 		void reset();
 		void sd();
@@ -316,17 +316,12 @@ class game
 
 		std::mt19937 gen;
 		std::mt19937 gen2;
-		int next_seed;
+		int next_seed=0;
 		bool seeded = false;
-		std::vector<int> hidden_queue;
+		std::vector<int> hidden_queue = {};
 		void bag_randomizer();
 		void place();
-		//int place_ghost(int x,int y)
-		/*int check_tetris_hole(int y, int* filled, int* bottom_filled, int* empty);
-		int check_tsd_hole(int y, int* nfilled, int* xloc);
-		int check_tst_hole(int y, int x, int* filled);
-		int check_stsd_hole(int y, int x, int* nfilled);
-		void eval_board();*/
+
 		void check_clear();
 		void copy_board(int dest[ROWS][COLUMNS], const int src[ROWS][COLUMNS]);
 };

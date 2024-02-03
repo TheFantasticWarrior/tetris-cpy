@@ -247,12 +247,12 @@ void game::check_clear() {
 	int lines = 0;
 	int invalid = 0;
 	int garbage = 0;
-	for (int_fast8_t i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		int row = y + 3 - i;
 		if (row < 30)
 		{
-			for (int_fast8_t j = 0; j < COLUMNS; j++)
+			for (int j = 0; j < COLUMNS; j++)
 			{
 				if (board[row][j] == -1) {
 					invalid++;
@@ -285,9 +285,9 @@ void game::check_clear() {
 		int oob = 0; //out of bounds
 		int frontcount = 0;
 		int front[4] = { 0b00,0b01,0b11,0b10 };
-		for (int_fast8_t i:{0, 1})
+		for (int i:{0, 1})
 		{
-			for (int_fast8_t j : {0, 1}) {
+			for (int j : {0, 1}) {
 				if (y + 1 + i > 29 || x + 1 + j < 0 || x + 1 + j>10) {
 					oob++;
 				}
@@ -332,7 +332,7 @@ void game::check_clear() {
 			{
 				if (ny<0)
 				{
-					for (int_fast8_t i = 0; i < 10; i++)
+					for (int i = 0; i < 10; i++)
 					{
 						board[j][i] = -1;
 					}
@@ -457,8 +457,8 @@ void game::bag_randomizer()
 }
 void game::place(){
 	int count = 0;
-	for (int_fast8_t i=0;i<4;i++){
-		for (int_fast8_t j=0;j<4;j++){
+	for (int i=0;i<4;i++){
+		for (int j=0;j<4;j++){
 			if(piecedefs[active][rotation][j][i]!=-1){
 				if (board[y+j][x+i]==-1){
 					board[y+j][x+i]=piecedefs[active][rotation][j][i];
@@ -527,9 +527,9 @@ void game::hold() {
 		hold_used = true;
 	}
 }
-int game::softdropdist(){
+int game::softdropdist() const{
 	int height[4]={30,30,30,30};
-	for (int_fast8_t i = 0; i < 4; i++){
+	for (int i = 0; i < 4; i++){
 		if (bottom[active][rotation][i]!=4){
 			int j = 0;
 			while (board[j + y+3-bottom[active][rotation][i]][x+i] == -1&& j + y - bottom[active][rotation][i]<27)
@@ -547,7 +547,7 @@ void game::sd() {
 	spin = 0;
 	kick = 0;
 	cleared = 0;
-	for (int_fast8_t i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		if (bottom[active][rotation][i] != 4 && !(board[1 + y + 3 - bottom[active][rotation][i]][x + i] == -1 && 1 + y - bottom[active][rotation][i] < 27)){
 			goto end;
 			
@@ -571,8 +571,8 @@ void game::harddrop2() { //slower
 	bool allowed = true;
 	while (allowed) {
 		ny++;
-		for (int_fast8_t i = 0; i < 4; i++) {
-			for (int_fast8_t j = 0; j < 4; j++) {
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
 				if (piecedefs[active][rotation][j][i] != -1) {
 					if (board[ny + j][x + i] != -1) {
 						allowed = false;
@@ -583,8 +583,8 @@ void game::harddrop2() { //slower
 		}
 	}
 	end:
-	for (int_fast8_t i = 0; i < 4; i++) {
-		for (int_fast8_t j = 0; j < 4; j++) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
 			if (piecedefs[active][rotation][j][i] != -1) {
 				board[ny-1 + j][x + i] = piecedefs[active][rotation][j][i];
 			}
@@ -602,7 +602,7 @@ void game::rotate(int direction)
 	int ny, nx, nr;
 	if (direction != 2) {
 
-		for (int_fast8_t n = 0; n < 5; n++)
+		for (int n = 0; n < 5; n++)
 		{
 			nr = mod(rotation + direction, 4);
 			if (active==6)
@@ -615,9 +615,9 @@ void game::rotate(int direction)
 				ny = y - direction * wallkick[direction == -1 ? nr : rotation][n][1];
 				nx = x + direction * wallkick[direction == -1 ? nr : rotation][n][0];
 			}
-			for (int_fast8_t i = 0; i < 4; i++) {
+			for (int i = 0; i < 4; i++) {
 				
-				for (int_fast8_t j = 0; j < 4; j++) {
+				for (int j = 0; j < 4; j++) {
 					
 					if (piecedefs[active][nr][j][i] != -1) {
 						if ((board[ny + j][nx + i] != -1) || (ny + j > 30) || !(0 <= nx + i &&nx+i< COLUMNS)) {
@@ -644,14 +644,14 @@ void game::rotate(int direction)
 	else
 	{
 		nr = mod(rotation + direction, 4);
-		for (int_fast8_t n = 0; n < 2; n++)
+		for (int n = 0; n < 2; n++)
 		{
 			
 			ny = y - n*((rotation == 0) ? 1 : (rotation == 2) ? -1 : 0);
 			nx = x + n*((rotation == 1) ? 1 : (rotation == 3) ? -1 : 0);
-			for (int_fast8_t i = 0; i < 4; i++) {
+			for (int i = 0; i < 4; i++) {
 
-				for (int_fast8_t j = 0; j < 4; j++) {
+				for (int j = 0; j < 4; j++) {
 
 					if (piecedefs[active][nr][j][i] != -1) {
 						if ((board[ny + j][nx + i] != -1) || (ny + j > 30) || !(0 <= nx + i && nx + i < COLUMNS)) {
@@ -678,8 +678,8 @@ void game::move(bool das,int d) {
 	cleared = 0;
 	spin = 0;
 	do {
-		for (int_fast8_t i = 0; i < 4; i++) {
-			for (int_fast8_t j = 0; j < 4; j++) {
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
 				if (piecedefs[active][rotation][j][i] != -1) {
 					if (board[y + j][nx + i] != -1|| !(0<=nx+i&&nx+i<COLUMNS)) {
 						
