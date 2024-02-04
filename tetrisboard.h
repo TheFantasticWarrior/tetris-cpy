@@ -63,7 +63,9 @@ class game
 			gheight = other.gheight;
 			spin = other.spin;
 			kick = other.kick;
-
+			for (int i = 0; i < 5; ++i) {
+				queue[i] = other.queue[i];
+			}
 			copy_board(board, other.board);
 			hidden_queue.assign(other.hidden_queue.begin(), other.hidden_queue.end());
 

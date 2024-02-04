@@ -69,7 +69,6 @@ public:
 			stored_attack += side * attack;
 		}
 		std::vector<int> recieve(int port) {
-			//std::cout << port << " ";
 			if (port == 1 && stored_attack < 0) {
 				stored_attack = 0;
 				return attack_queue;
@@ -98,8 +97,8 @@ public:
 			set_seed(1);
 			reset();
 		}
-		game_client(const game_client& other) : game(other) {
-				server = new game_server(*other.server);
+		game_client(const game_client& other, game_server* s) : game(other) {
+				server = s;
 				port = other.port;
 				action_count = other.action_count;
 				last_invalid = other.last_invalid;
@@ -187,8 +186,8 @@ public:
 	game_container(const game_container& other) {
 		server = new game_server(*other.server);
 
-		clients[0] = new game_client(*other.clients[0]);
-		clients[1] = new game_client(*other.clients[1]);
+		clients[0] = new game_client(*other.clients[0],server);
+		clients[1] = new game_client(*other.clients[1],server);
 	}
 	~game_container() {
 		if (server != nullptr) {
@@ -289,7 +288,6 @@ public:
 		for (size_t i = 0; i < 210; i++)
 		{
 			state[i + 12] = self->clients[0]->board[9 + i % 21][i / 21] + 1 > 0;
-			//std::cout << state[i + 12] << " ";
 		}
 		//active
 		for (int i = 0; i < 210; i++)
@@ -334,7 +332,6 @@ public:
 		for (size_t i = 0; i < 210; i++)
 		{
 			state[738 + i + 12] = self->clients[1]->board[9 + i % 21][i / 21] + 1 > 0;
-			//std::cout << state[738+i + 12] << " ";
 		}
 		//active
 		for (int i = 0; i < 210; i++)
@@ -492,7 +489,6 @@ private:
 	void c_create_window() {
 
 		c_close();
-		std::cout << "Creating window..." << std::endl;
 
 
 		int width = (block_size + 1) * 100 / 3 + 2;
@@ -518,7 +514,6 @@ private:
 		}
 
 		SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_BLEND);
-		std::cout << "Window created with dimensions: " << width << "x" << height << std::endl;
 		this->window_opened = true;
 	}
 
@@ -560,7 +555,6 @@ private:
 	void draw(const game& g, int xloc) {
 		int ghosty;
 		color_from_rgb(0x666666);
-		std::cout << g.hold_used << std::endl;
 		bg.x += xloc;
 		SDL_RenderFillRect(renderer, &bg);
 		for (int i = 0; i < 10; i++)
@@ -569,12 +563,10 @@ private:
 			{
 				rect.x = 1 + BOARDX + i * (block_size + 1) + xloc;
 				rect.y = -block_size / 2 + j * (block_size + 1);
-				//std::cout << g.board[j + 9][i] + 1 << " " << colors[g.board[j + 9][i] + 1]<<" ";
 				color_from_rgb(colors[g.board[j + 9][i] + 1]);
 				SDL_RenderFillRect(renderer, &rect);
 
 			}
-			//std::cout << "\n";
 		}
 		// queue
 		for (int n = 0; n < 5; n++)
@@ -736,7 +728,7 @@ PyObject* game_renderer::render(game_renderer* self, PyObject* args) {
 		}
 	}
 	else {
-		std::cout << "No Window open!\nUse create_window(render_mode,render_size) to create a window";
+		std::cerr << "No Window open!\nUse create_window(render_mode,render_size) to create a window";
 	}
 
 	Py_RETURN_NONE;
