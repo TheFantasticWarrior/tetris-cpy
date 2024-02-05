@@ -26,7 +26,7 @@ public:
 	class game_server {
 	public:
 		int stored_attack=0;
-		std::vector<int> attack_queue{};
+		std::vector<int8_t> attack_queue{};
 		game_server() { reset(); }
 		game_server(const game_server& other) {
 			stored_attack = other.stored_attack;
@@ -68,7 +68,7 @@ public:
 
 			stored_attack += side * attack;
 		}
-		std::vector<int> recieve(int port) {
+		std::vector<int8_t> recieve(int port) {
 			if (port == 1 && stored_attack < 0) {
 				stored_attack = 0;
 				return attack_queue;
@@ -239,133 +239,138 @@ public:
 		Py_RETURN_NONE;
 	}
 	static PyObject* get_state(game_container* self, PyObject * Py_UNUSED) {
-		const npy_intp dim = 1477;
+		const npy_intp dim = 1476;
 		const npy_intp* dims = &dim;
 		int8_t* state = new int8_t[dim];
-		state[1476] = self->server->stored_attack;
 		if (self->clients[0]->game_over|| self->clients[1]->game_over){
-		if (self->clients[0]->game_over&&self->clients[1]->game_over)
-		{
-			state[0] = 127;
-			state[738] = 127;
-		}
-		else if (self->clients[0]->game_over) {
-			state[0] = 127;
-			state[738] = 126;
-
-		}
-		else {
-			state[738 + 0] = 127;
-			state[0] = 126;
-		}
-	}
-	else {
-		if (self->clients[0]->last_invalid) {
-			state[0] = 125;
-		}
-		else {
-			state[0] = self->clients[0]->cleared + self->clients[0]->spin;
-		}
-		if (self->clients[1]->last_invalid) {
-			state[738] = 125;
-		}
-		else {
-			state[738 + 0] = self->clients[1]->cleared + self->clients[1]->spin;
-		}
-	}
-		state[0] = self->clients[0]->cleared;
-		state[1] = self->clients[0]->action_count;//self->clients[0]->x+2;
-
-		state[2] = self->clients[0]->gheight;//self->clients[0]->y;
-		state[3] = self->clients[0]->hold_used;
-		state[4] = self->clients[0]->rotation;
-		state[5] = self->clients[0]->active + 1;
-		state[6] = self->clients[0]->held_piece + 1;
-		for (size_t i = 0; i < 5; i++)
-		{
-			state[i + 7] = self->clients[0]->queue[i] + 1;
-		}
-		for (size_t i = 0; i < 210; i++)
-		{
-			state[i + 12] = self->clients[0]->board[9 + i % 21][i / 21] + 1 > 0;
-		}
-		//active
-		for (int i = 0; i < 210; i++)
-		{
-			state[i + 222] = ((9 + i % 21) >= self->clients[0]->y) && ((6 + i % 21) <= self->clients[0]->y) && ((i / 21) - self->clients[0]->x >= 0) && (self->clients[0]->x + 3 - (i / 21) >= 0) ? (self->clients[0]->piecedefs[self->clients[0]->active][self->clients[0]->rotation][(9 + i % 21) - self->clients[0]->y][((i / 21) - self->clients[0]->x)] + 1) > 0: 0;
-		}
-		//shadow
-		int ny = self->clients[0]->y + self->clients[0]->softdropdist();
-		for (int i = 0; i < 210; i++)
-		{
-			state[i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - self->clients[0]->x >= 0) && (self->clients[0]->x + 3 - (i / 21) >= 0) ? (self->clients[0]->piecedefs[self->clients[0]->active][self->clients[0]->rotation][(9 + i % 21) - (ny)][((i / 21) - self->clients[0]->x)] + 1) > 0:0;
-		}
-		for (size_t j = 0; j < 4; j++)
-		{
-			for (size_t k = 0; k < 4; k++)
+			if (self->clients[0]->game_over&&self->clients[1]->game_over)
 			{
-				state[j * 4 + 642 + k] = self->clients[0]->held_piece != -1 ? ((self->clients[0]->piecedefs[self->clients[0]->held_piece][0][k][j] + 1) > 0) : 0;
+				state[0] = 127;
+				state[738] = 127;
+			}
+			else if (self->clients[0]->game_over) {
+				state[0] = 127;
+				state[738] = 126;
+
+			}
+			else {
+				state[738 + 0] = 127;
+				state[0] = 126;
 			}
 		}
+		else {
+			if (self->clients[0]->last_invalid) {
+				state[0] = 125;
+			}
+			else {
+				state[0] = self->clients[0]->cleared + self->clients[0]->spin;
+			}
+			if (self->clients[1]->last_invalid) {
+				state[738] = 125;
+			}
+			else {
+				state[738 + 0] = self->clients[1]->cleared + self->clients[1]->spin;
+			}
+		}
+			state[1] = self->clients[0]->action_count;//self->clients[0]->x+2;
 
-		for (size_t i = 0; i < 5; i++)
-		{
+			state[2] = self->clients[0]->gheight;//self->clients[0]->y;
+			state[3] = self->clients[0]->hold_used;
+			state[4] = self->clients[0]->rotation;
+			state[5] = self->clients[0]->active + 1;
+			state[6] = self->clients[0]->held_piece + 1;
+			for (size_t i = 0; i < 5; i++)
+			{
+				state[i + 7] = self->clients[0]->queue[i] + 1;
+			}
+			for (size_t i = 0; i < 210; i++)
+			{
+				state[i + 12] = self->clients[0]->board[9 + i % 21][i / 21] + 1 > 0;
+			}
+			//active
+			for (int i = 0; i < 210; i++)
+			{
+				state[i + 222] = ((9 + i % 21) >= self->clients[0]->y) && ((6 + i % 21) <= self->clients[0]->y) && ((i / 21) - self->clients[0]->x >= 0) && (self->clients[0]->x + 3 - (i / 21) >= 0) ? (self->clients[0]->piecedefs[self->clients[0]->active][self->clients[0]->rotation][(9 + i % 21) - self->clients[0]->y][((i / 21) - self->clients[0]->x)] + 1) > 0: 0;
+			}
+			//shadow
+			int ny = self->clients[0]->y + self->clients[0]->softdropdist();
+			for (int i = 0; i < 210; i++)
+			{
+				state[i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - self->clients[0]->x >= 0) && (self->clients[0]->x + 3 - (i / 21) >= 0) ? (self->clients[0]->piecedefs[self->clients[0]->active][self->clients[0]->rotation][(9 + i % 21) - (ny)][((i / 21) - self->clients[0]->x)] + 1) > 0:0;
+			}
 			for (size_t j = 0; j < 4; j++)
 			{
 				for (size_t k = 0; k < 4; k++)
 				{
-					state[i * 16 + j * 4 + 658 + k] = ((self->clients[0]->piecedefs[self->clients[0]->queue[i]][0][k][j] + 1) > 0);
+					state[j * 4 + 642 + k] = self->clients[0]->held_piece != -1 ? ((self->clients[0]->piecedefs[self->clients[0]->held_piece][0][k][j] + 1) > 0) : 0;
 				}
 			}
-		}
-		state[738 + 0] = self->clients[1]->cleared;
-		state[738 + 1] = self->clients[1]->action_count;//self->clients[1]->x+2;
-		state[738 + 2] = self->clients[1]->gheight;//self->clients[1]->y;
-		state[738 + 3] = self->clients[1]->hold_used;
-		state[738 + 4] = self->clients[1]->rotation;
-		state[738 + 5] = self->clients[1]->active + 1;
-		state[738 + 6] = self->clients[1]->held_piece + 1;
-		for (size_t i = 0; i < 5; i++)
-		{
-			state[738 + i + 7] = self->clients[1]->queue[i] + 1;
-		}
-		for (size_t i = 0; i < 210; i++)
-		{
-			state[738 + i + 12] = self->clients[1]->board[9 + i % 21][i / 21] + 1 > 0;
-		}
-		//active
-		for (int i = 0; i < 210; i++)
-		{
-			state[738 + i + 222] = ((9 + i % 21) >= self->clients[1]->y) && ((6 + i % 21) <= self->clients[1]->y) && ((i / 21) - self->clients[1]->x >= 0) && (self->clients[1]->x + 3 - (i / 21) >= 0) ? (self->clients[1]->piecedefs[self->clients[1]->active][self->clients[1]->rotation][(9 + i % 21) - self->clients[1]->y][((i / 21) - self->clients[1]->x)] + 1) > 0: 0;
-		}
-		//shadow
-		ny = self->clients[1]->y + self->clients[1]->softdropdist();
-		for (int i = 0; i < 210; i++)
-		{
-			state[738 + i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - self->clients[1]->x >= 0) && (self->clients[1]->x + 3 - (i / 21) >= 0) ? (self->clients[1]->piecedefs[self->clients[1]->active][self->clients[1]->rotation][(9 + i % 21) - (ny)][((i / 21) - self->clients[1]->x)] + 1) > 0:0;
-		}
-		for (size_t j = 0; j < 4; j++)
-		{
-			for (size_t k = 0; k < 4; k++)
-			{
-				state[738 + j * 4 + 642 + k] = self->clients[1]->held_piece != -1 ? ((self->clients[1]->piecedefs[self->clients[1]->held_piece][0][k][j] + 1) > 0) : 0;
-			}
-		}
 
-		for (size_t i = 0; i < 5; i++)
-		{
+			for (size_t i = 0; i < 5; i++)
+			{
+				for (size_t j = 0; j < 4; j++)
+				{
+					for (size_t k = 0; k < 4; k++)
+					{
+						state[i * 16 + j * 4 + 658 + k] = ((self->clients[0]->piecedefs[self->clients[0]->queue[i]][0][k][j] + 1) > 0);
+					}
+				}
+			}
+			state[738 + 1] = self->clients[1]->action_count;//self->clients[1]->x+2;
+			state[738 + 2] = self->clients[1]->gheight;//self->clients[1]->y;
+			state[738 + 3] = self->clients[1]->hold_used;
+			state[738 + 4] = self->clients[1]->rotation;
+			state[738 + 5] = self->clients[1]->active + 1;
+			state[738 + 6] = self->clients[1]->held_piece + 1;
+			for (size_t i = 0; i < 5; i++)
+			{
+				state[738 + i + 7] = self->clients[1]->queue[i] + 1;
+			}
+			for (size_t i = 0; i < 210; i++)
+			{
+				state[738 + i + 12] = self->clients[1]->board[9 + i % 21][i / 21] + 1 > 0;
+			}
+			//active
+			for (int i = 0; i < 210; i++)
+			{
+				state[738 + i + 222] = ((9 + i % 21) >= self->clients[1]->y) && ((6 + i % 21) <= self->clients[1]->y) && ((i / 21) - self->clients[1]->x >= 0) && (self->clients[1]->x + 3 - (i / 21) >= 0) ? (self->clients[1]->piecedefs[self->clients[1]->active][self->clients[1]->rotation][(9 + i % 21) - self->clients[1]->y][((i / 21) - self->clients[1]->x)] + 1) > 0: 0;
+			}
+			//shadow
+			ny = self->clients[1]->y + self->clients[1]->softdropdist();
+			for (int i = 0; i < 210; i++)
+			{
+				state[738 + i + 432] = ((9 + i % 21) >= (ny)) && ((6 + i % 21) <= (ny)) && ((i / 21) - self->clients[1]->x >= 0) && (self->clients[1]->x + 3 - (i / 21) >= 0) ? (self->clients[1]->piecedefs[self->clients[1]->active][self->clients[1]->rotation][(9 + i % 21) - (ny)][((i / 21) - self->clients[1]->x)] + 1) > 0:0;
+			}
 			for (size_t j = 0; j < 4; j++)
 			{
 				for (size_t k = 0; k < 4; k++)
 				{
-					state[738 + i * 16 + j * 4 + 658 + k] = ((self->clients[1]->piecedefs[self->clients[1]->queue[i]][0][k][j] + 1) > 0);
+					state[738 + j * 4 + 642 + k] = self->clients[1]->held_piece != -1 ? ((self->clients[1]->piecedefs[self->clients[1]->held_piece][0][k][j] + 1) > 0) : 0;
 				}
 			}
-		}
+
+			for (size_t i = 0; i < 5; i++)
+			{
+				for (size_t j = 0; j < 4; j++)
+				{
+					for (size_t k = 0; k < 4; k++)
+					{
+						state[738 + i * 16 + j * 4 + 658 + k] = ((self->clients[1]->piecedefs[self->clients[1]->queue[i]][0][k][j] + 1) > 0);
+					}
+				}
+			}
 		PyObject* ret = PyArray_SimpleNewFromData(1, dims, NPY_INT8, state);
 		PyArray_ENABLEFLAGS((PyArrayObject*)ret, NPY_ARRAY_OWNDATA);
 		//free(state);
 		return ret;
+	}
+	static PyObject* get_atk(game_container* self, PyObject* Py_UNUSED) {
+		PyObject* t = PyTuple_New(2);
+		PyTuple_SetItem(t, 0, PyBool_FromLong(self->server->stored_attack < 0));
+		npy_intp size = self->server->attack_queue.size();
+		PyObject* a = PyArray_SimpleNewFromData(1, &size, NPY_INT8, self->server->attack_queue.data());
+		PyTuple_SetItem(t,1,a);
+		return t;
 	}
 	static PyObject* step(game_container* self, PyObject* args) {
 		int x, y;
@@ -381,6 +386,7 @@ static PyMethodDef game_container_methods[] = {
 	{"seed_reset", (PyCFunction)game_container::seed_reset, METH_VARARGS, "Seed and reset"},
 	{"reset", (PyCFunction)game_container::reset, METH_NOARGS, "Reset game"},
 	{"get_state", (PyCFunction)game_container::get_state, METH_NOARGS, "Get game state"},
+	{"get_atk", (PyCFunction)game_container::get_atk, METH_NOARGS, "Get attack state, (atk_to_p1,atk_queue)"},
 	{"step", (PyCFunction)game_container::step, METH_VARARGS, "Step game, two inputs for each board"},
 	{"copy", (PyCFunction)game_container::copy, METH_NOARGS, "Copy game state"},
 	{NULL, NULL, 0, NULL} // Sentinel
@@ -660,7 +666,7 @@ private:
 			}
 		}
 	}
-	void draw_atk(int side, std::vector<int> attacks) {
+	void draw_atk(int side, std::vector<int8_t> attacks) {
 		red_line.x = BOARDX + 11 * (block_size + 1) + side * BOARDX * 5;
 		int sum = 0;
 		for (int i:attacks)

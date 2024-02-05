@@ -372,7 +372,7 @@ void game::check_clear() {
 	cleared = (10 * (attack+ garbage + b2b *2* (lines > 0)) + 2 * lines+b2b);
 }
 
-void game::recieve(std::vector<int> list) {
+void game::recieve(std::vector<int8_t> list) {
 	while (!list.empty()) {
 		int incoming = list[0];
 		list.erase(list.begin());
@@ -420,14 +420,14 @@ void game::random_recv(int max) {
 	std::uniform_int_distribution<>dis(0, max);
 	recv = dis(gen2);
 	if (recv == 0) {
-		recieve(std::vector<int>{1,1,1,1});
+		recieve(std::vector<int8_t>{1,1,1,1});
 		return;
 	}
 	std::uniform_int_distribution<>dis2(0, 1);
-	int b2bon;
+	int8_t b2bon;
 	while (curr < recv) {
 		b2bon = dis2(gen2);
-		recieve(std::vector<int>{b2bon + 4});
+		recieve(std::vector<int8_t>{(int8_t)(b2bon + 4)});
 		curr += b2bon + 4;
 	}
 	return;

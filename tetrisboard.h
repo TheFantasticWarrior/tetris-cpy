@@ -33,7 +33,7 @@ class game
 
 
 		void new_piece();
-		void recieve(std::vector<int> list);
+		void recieve(std::vector<int8_t> list);
 
 		int softdropdist() const;
 
@@ -320,7 +320,7 @@ class game
 		std::mt19937 gen2;
 		int next_seed=0;
 		bool seeded = false;
-		std::vector<int> hidden_queue = {};
+		std::vector<int8_t> hidden_queue = {};
 		void bag_randomizer();
 		void place();
 
