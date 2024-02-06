@@ -826,7 +826,6 @@ PyObject* game_renderer::render(game_renderer* self, PyObject* args) {
 		PyErr_SetString(PyExc_RuntimeError, "Failed to retrieve game_container instance from the capsule.");
 		return NULL;
 	}
-	std::cout << "checks passed\n";
 	if (self->window_opened)
 	{
 		self->c_render(*g);
