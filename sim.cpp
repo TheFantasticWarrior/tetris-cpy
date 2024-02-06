@@ -201,19 +201,75 @@ public:
 		}
 	}
 	static int init(game_container* self, PyObject* args) {
+		PyArrayObject* x=nullptr,*y=nullptr,*z = nullptr;
+		int a=-1,s=-1;
+		if (!PyArg_ParseTuple(args, "|O!iO!iO!", &PyArray_Type, &x,&s, &PyArray_Type, &y,&a, &PyArray_Type, &z)) {
+			return -1;
+		}
 		self->server = new game_server();
 		try {
 			self->clients[0] = new game_client(self->server, 1);
 			self->clients[1] = new game_client(self->server, 2);
 		}
 		catch (const std::exception& e) {
-			// Print or log the exception details
 			std::cerr << "Exception during initialization: " << e.what() << std::endl;
-			return -1;  // Indicate failure
+			return -1;
 		}
+		if (x!=nullptr) {
+			if (*PyArray_SHAPE(x) != 444)
+			{
+				std::cerr << "Input 1 (arr) needs to be shape 444 for restoring!\n";
+				return -1;
+			}
+			if (y == nullptr || z == nullptr || a == -1 || s == -1)
+			{
+				std::cerr << "Values not provided!\nNeeds to be arr, p1 hidden_queue length, hidden_queue, attack queue length, attack_queue\n";
+				return -1;
+			}
+			npy_intp* shape1 = PyArray_SHAPE(y);
+			npy_intp* shape2 = PyArray_SHAPE(z);
+
+			int8_t* arr = (int8_t*)PyArray_DATA(x);
+			int8_t* arr2 = (int8_t*)PyArray_DATA(y);
+			int8_t* arr3 = (int8_t*)PyArray_DATA(z);
+
+			self->server->stored_attack = a;
+			self->clients[0]->action_count=arr[1];
+
+			self->clients[0]->gheight=arr[2];
+			self->clients[0]->hold_used=arr[3];
+			self->clients[0]->rotation=arr[4];
+			self->clients[0]->active=arr[5]-1;
+			self->clients[0]->held_piece=arr[6]-1;
+			for (size_t i = 0; i < 5; i++)
+			{
+				self->clients[0]->queue[i]=arr[i + 7]-1;
+			}
+			for (size_t i = 0; i < 210; i++)
+			{
+				self->clients[0]->board[9 + i % 21][i / 21]=arr[i + 12]-1;
+			}
+			self->clients[1]->action_count=arr[222 + 1];
+			self->clients[1]->gheight=arr[222 + 2];
+			self->clients[1]->hold_used=arr[222 + 3];
+			self->clients[1]->rotation=arr[222 + 4];
+			self->clients[1]->active=arr[222 + 5]-1;
+			self->clients[1]->held_piece=arr[222 + 6]-1;
+			for (size_t i = 0; i < 5; i++)
+			{
+				self->clients[1]->queue[i]=arr[222 + i + 7]-1;
+			}
+			for (size_t i = 0; i < 210; i++)
+			{
+				self->clients[1]->board[9 + i % 21][i / 21]=arr[222 + i + 12]-1;
+			}
+			self->copy_to_hidden(arr2, arr3, s, shape1[0], shape2[0]);
+
+		}
+
 		return 0;
 	}
-
+	
 	static void dealloc(game_container* self) {
 		Py_TYPE(self)->tp_free((PyObject*)self);
 	}
@@ -381,12 +437,49 @@ public:
 		Py_RETURN_NONE;
 	}
 	static game_container* copy(game_container* self, PyObject* Py_UNUSED);
+	static PyObject* get_hidden_queue(game_container* self, PyObject* Py_UNUSED) {
+		int ret[2] = { -1 };
+		self->get_size(ret);
+		if (ret[0] == -1)return NULL;
+		int8_t* state = self->get_hidden(ret[0],ret[1]);
+		const npy_intp dim = ret[1];
+
+		const npy_intp* dims = &dim;
+		PyObject* a = PyArray_SimpleNewFromData(1, dims, NPY_INT8, state);
+
+		PyObject* t = PyTuple_New(2);
+		PyTuple_SetItem(t, 0, PyLong_FromLong(ret[0]));
+		PyTuple_SetItem(t, 1, a);
+
+		return t;
+	}
+	private:
+		void copy_to_hidden(int8_t* arr2, int8_t* arr3, int s, int s1, int s2) {
+			std::copy(arr2, arr2 + s, this->clients[0]->hidden_queue.begin());
+			std::copy(arr2 + s, arr2 + s1, this->clients[1]->hidden_queue.begin());
+			this->server->attack_queue.resize(s2);
+			std::copy(arr3, arr3 + s2, this->server->attack_queue.begin());
+		}
+		int8_t* get_hidden(int size1,int dim){
+			int8_t* state = new int8_t[dim];
+			std::copy(this->clients[0]->hidden_queue.begin(), this->clients[0]->hidden_queue.end(), state);
+			std::copy(this->clients[1]->hidden_queue.begin(), this->clients[1]->hidden_queue.end(), state + size1);
+			return state;
+		}
+		void get_size(int ret[2]){
+			int size1 = this->clients[0]->hidden_queue.size();
+			int size2 = this->clients[1]->hidden_queue.size();
+			ret[0] = size1;
+			ret[1]=size1 + size2;
+		}
+
 };
 static PyMethodDef game_container_methods[] = {
 	{"seed_reset", (PyCFunction)game_container::seed_reset, METH_VARARGS, "Seed and reset"},
 	{"reset", (PyCFunction)game_container::reset, METH_NOARGS, "Reset game"},
 	{"get_state", (PyCFunction)game_container::get_state, METH_NOARGS, "Get game state"},
-	{"get_atk", (PyCFunction)game_container::get_atk, METH_NOARGS, "Get attack state, (atk_to_p1,atk_queue)"},
+	{"get_atk", (PyCFunction)game_container::get_atk, METH_NOARGS, "Get attack state, (atk_to_p1?, atk_queue)"},
+	{"get_hidden", (PyCFunction)game_container::get_hidden_queue, METH_NOARGS, "get hidden queue for serialization"},
 	{"step", (PyCFunction)game_container::step, METH_VARARGS, "Step game, two inputs for each board"},
 	{"copy", (PyCFunction)game_container::copy, METH_NOARGS, "Copy game state"},
 	{NULL, NULL, 0, NULL} // Sentinel
@@ -699,7 +792,7 @@ static PyTypeObject game_container_type = {
 	.tp_itemsize = 0,
 	.tp_dealloc = (destructor)game_container::dealloc,
 	.tp_flags = 0,// Py_TPFLAGS_BASETYPE,
-	.tp_doc = "game_container objects",
+	.tp_doc = "game_container objects\ninit(no arg):new game state\ninit(state,hidden_queue length, hidden queue,attack length, stored attacks)",
 	.tp_methods = game_container_methods,
 	.tp_init = (initproc)game_container::init,
 	.tp_new = PyType_GenericNew,//game_container::_new,
@@ -721,20 +814,29 @@ PyObject* game_renderer::render(game_renderer* self, PyObject* args) {
 
 	PyObject* pyg;
 	if (!PyArg_ParseTuple(args, "O", &pyg)) {
+		PyErr_SetString(PyExc_TypeError, "Can't parse.");
+		return NULL;
+	}
+	if (!PyObject_IsInstance(pyg, (PyObject*) & game_container_type)) {
+		PyErr_SetString(PyExc_TypeError, "Expected a game_container instance.");
 		return NULL;
 	}
 	const game_container* g = reinterpret_cast<const game_container*>(pyg);
+	if (!g) {
+		PyErr_SetString(PyExc_RuntimeError, "Failed to retrieve game_container instance from the capsule.");
+		return NULL;
+	}
+	std::cout << "checks passed\n";
 	if (self->window_opened)
 	{
 		self->c_render(*g);
-
 		SDL_PollEvent(&self->event);
 		if (self->event.type == SDL_QUIT) {
 			self->c_close();
 		}
 	}
 	else {
-		std::cerr << "No Window open!\nUse create_window(render_mode,render_size) to create a window";
+		std::cerr << "No Window open!\nUse create_window(render_mode,render_size) to create a window\n";
 	}
 
 	Py_RETURN_NONE;

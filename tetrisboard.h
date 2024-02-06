@@ -314,13 +314,14 @@ class game
 
 		bool spin = 0;
 		bool kick=0;
+		std::vector<int8_t> hidden_queue = {};
+
 	private:
 
 		std::mt19937 gen;
 		std::mt19937 gen2;
 		int next_seed=0;
 		bool seeded = false;
-		std::vector<int8_t> hidden_queue = {};
 		void bag_randomizer();
 		void place();
 
