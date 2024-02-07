@@ -319,13 +319,13 @@ void game::check_clear() {
 		combo++;
 		//board clear
 		int j = 29;
-		int i = 0;
+		int idx = 0;
 		int offset = 0;
 		while (j > 0) {
 			int ny = j - offset;
-			if (ny==clear[i])
+			if (idx < 4&&ny==clear[idx])
 			{
-				i++;
+				idx++;
 				offset++;
 			}
 			else

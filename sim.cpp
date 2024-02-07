@@ -464,6 +464,8 @@ public:
 	}
 	private:
 		void copy_to_hidden(int8_t* arr2, int8_t* arr3, int s, int s1, int s2) {
+			this->clients[0]->hidden_queue.resize(s);
+			this->clients[1]->hidden_queue.resize(s1-s);
 			std::copy(arr2, arr2 + s, this->clients[0]->hidden_queue.begin());
 			std::copy(arr2 + s, arr2 + s1, this->clients[1]->hidden_queue.begin());
 			this->server->attack_queue.resize(s2);
@@ -841,13 +843,15 @@ PyObject* game_renderer::render(game_renderer* self, PyObject* args) {
 		SDL_PollEvent(&self->event);
 		if (self->event.type == SDL_QUIT) {
 			self->c_close();
+			return PyBool_FromLong(1);
 		}
 	}
 	else {
 		std::cerr << "No Window open!\nUse create_window(render_mode,render_size) to create a window\n";
+		return PyBool_FromLong(1);
 	}
 
-	Py_RETURN_NONE;
+	return PyBool_FromLong(0);
 }
 static PyTypeObject game_renderer_type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
