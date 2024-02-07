@@ -247,7 +247,7 @@ public:
 			}
 			for (size_t i = 0; i < 210; i++)
 			{
-				self->clients[0]->board[9 + i % 21][i / 21]=arr[i + 12]-1;
+				self->clients[0]->board[9 + i % 21][i / 21]=(arr[i + 12] > 0) * 8 - 1;
 			}
 			self->clients[1]->action_count=arr[222 + 1];
 			self->clients[1]->gheight=arr[222 + 2];
@@ -257,11 +257,11 @@ public:
 			self->clients[1]->held_piece=arr[222 + 6]-1;
 			for (size_t i = 0; i < 5; i++)
 			{
-				self->clients[1]->queue[i]=arr[222 + i + 7]-1;
+				self->clients[1]->queue[i] = arr[222 + i + 7]-1;
 			}
 			for (size_t i = 0; i < 210; i++)
 			{
-				self->clients[1]->board[9 + i % 21][i / 21]=arr[222 + i + 12]-1;
+				self->clients[1]->board[9 + i % 21][i / 21]=(arr[222 + i + 12]>0)*8-1;
 			}
 			self->copy_to_hidden(arr2, arr3, s, shape1[0], shape2[0]);
 
