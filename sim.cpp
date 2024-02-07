@@ -272,6 +272,15 @@ public:
 	
 	static void dealloc(game_container* self) {
 		Py_TYPE(self)->tp_free((PyObject*)self);
+		if (self->server != nullptr) {
+			delete self->server;
+		}
+		if (self->clients[0] != nullptr) {
+			delete self->clients[0];
+		}
+		if (self->clients[1] != nullptr) {
+			delete self->clients[1];
+		}
 	}
 	static PyObject* seed_reset(game_container* self, PyObject* args) {
 		int x = 0;
@@ -297,7 +306,7 @@ public:
 	static PyObject* get_state(game_container* self, PyObject * Py_UNUSED) {
 		const npy_intp dim = 1476;
 		const npy_intp* dims = &dim;
-		int8_t* state = new int8_t[dim];
+		int8_t* state = (int8_t*)malloc(dim * sizeof(int8_t));
 		if (self->clients[0]->game_over|| self->clients[1]->game_over){
 			if (self->clients[0]->game_over&&self->clients[1]->game_over)
 			{
@@ -417,7 +426,6 @@ public:
 			}
 		PyObject* ret = PyArray_SimpleNewFromData(1, dims, NPY_INT8, state);
 		PyArray_ENABLEFLAGS((PyArrayObject*)ret, NPY_ARRAY_OWNDATA);
-		//free(state);
 		return ret;
 	}
 	static PyObject* get_atk(game_container* self, PyObject* Py_UNUSED) {
@@ -446,6 +454,7 @@ public:
 
 		const npy_intp* dims = &dim;
 		PyObject* a = PyArray_SimpleNewFromData(1, dims, NPY_INT8, state);
+		PyArray_ENABLEFLAGS((PyArrayObject*)a, NPY_ARRAY_OWNDATA);
 
 		PyObject* t = PyTuple_New(2);
 		PyTuple_SetItem(t, 0, PyLong_FromLong(ret[0]));
@@ -461,7 +470,7 @@ public:
 			std::copy(arr3, arr3 + s2, this->server->attack_queue.begin());
 		}
 		int8_t* get_hidden(int size1,int dim){
-			int8_t* state = new int8_t[dim];
+			int8_t* state = (int8_t*)malloc(dim * sizeof(int8_t));
 			std::copy(this->clients[0]->hidden_queue.begin(), this->clients[0]->hidden_queue.end(), state);
 			std::copy(this->clients[1]->hidden_queue.begin(), this->clients[1]->hidden_queue.end(), state + size1);
 			return state;
@@ -511,9 +520,9 @@ public:
 	}
 	static void dealloc(game_renderer* self) {
 		self->c_close();
-		SDL_Quit();
 		Py_TYPE(self)->tp_free((PyObject*)self);
 		//delete self;
+		SDL_Quit();
 	}
 
 	bool window_opened = false;
