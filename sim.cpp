@@ -271,7 +271,6 @@ public:
 	}
 	
 	static void dealloc(game_container* self) {
-		Py_TYPE(self)->tp_free((PyObject*)self);
 		if (self->server != nullptr) {
 			delete self->server;
 		}
@@ -281,6 +280,9 @@ public:
 		if (self->clients[1] != nullptr) {
 			delete self->clients[1];
 		}
+		//delete self;
+		//Py_TYPE(self)->tp_free((PyObject*)self);
+
 	}
 	static PyObject* seed_reset(game_container* self, PyObject* args) {
 		int x = 0;
@@ -522,7 +524,7 @@ public:
 	}
 	static void dealloc(game_renderer* self) {
 		self->c_close();
-		Py_TYPE(self)->tp_free((PyObject*)self);
+		//Py_TYPE(self)->tp_free((PyObject*)self);
 		//delete self;
 		SDL_Quit();
 	}
@@ -564,8 +566,8 @@ private:
 	SDL_Rect red_line{};
 	SDL_Rect red_line_small{};
 	SDL_Event event{};
-	SDL_Window* window;
-	SDL_Renderer* renderer;
+	SDL_Window* window=nullptr;
+	SDL_Renderer* renderer = nullptr;
 	int block_size=30;
 	int BOARDX=0;
 	int colors[9]{ //bg SZJLTOI garbage
@@ -598,9 +600,6 @@ private:
 	}
 	void c_create_window() {
 
-		c_close();
-
-
 		int width = (block_size + 1) * 100 / 3 + 2;
 		int height = 20.5f * (block_size + 1);
 		BOARDX = width / 10;
@@ -608,18 +607,20 @@ private:
 		rect.w = block_size; rect.h = block_size;
 		red_line.w = (int)(block_size / 10), red_line.h = block_size + 1;
 		red_line_small.w = (int)(block_size / 10), red_line_small.h = block_size;
+		if (!this->window) {
 
-		
-		// Create window and renderer
-		this->window = SDL_CreateWindow("Tetris", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+			this->window = SDL_CreateWindow("Tetris", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+		}
 		if (!this->window) {
 			std::cerr << "SDL window creation failed: " << SDL_GetError() << std::endl;
 			return;
 		}
-
-		this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
 		if (!this->renderer) {
-			std::cerr << "S DL renderer creation failed: " << SDL_GetError() << std::endl;
+
+			this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
+		}
+		if (!this->renderer) {
+			std::cerr << "SDL renderer creation failed: " << SDL_GetError() << std::endl;
 			return;
 		}
 
@@ -628,17 +629,18 @@ private:
 	}
 
 	void c_close() {
-		if (window_opened) {
-			if (this->renderer) {
-				SDL_DestroyRenderer(this->renderer);
-				this->renderer = nullptr;
-			}
-			if (this->window) {
-				SDL_DestroyWindow(this->window);
-				this->window = nullptr;
-			}
-			window_opened = false;
+		if (this->renderer!=nullptr) {
+			SDL_DestroyRenderer(this->renderer);
+			this->renderer = nullptr;
+
 		}
+		if (this->window != nullptr) {
+			SDL_DestroyWindow(this->window);
+			this->window = nullptr;
+
+		}
+		window_opened = false;
+		
 	}
 	void color_from_rgb(uint32_t v) {
 		SDL_SetRenderDrawColor(renderer, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF, 0xFF);
