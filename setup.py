@@ -1,12 +1,13 @@
-from setuptools import setup,find_packages, Extension
+from setuptools import setup, Extension
 import numpy as np
 
 module1 = Extension('tetris',
-                    include_dirs=['/usr/include/SDL2', # adjust if needed
+                    include_dirs=[#'/usr/include/SDL2', # adjust if needed
                                   np.get_include()],
                     libraries=['SDL2'],
-                    library_dirs=['/usr/lib'], # adjust if needed
-                    sources = ['tetrisboard.cpp', 'env.cpp'])
+                    #library_dirs=['/usr/lib'], # adjust if needed
+                    sources = ['tetrisboard.cpp', 'env.cpp'],
+                    include_package_data=True)
 
 setup (name = 'tetris_c',
        version = '0.1',
@@ -14,6 +15,4 @@ setup (name = 'tetris_c',
        author='TFW',
        author_email='tfwplssub@gmail.com',
        url='https://github.com/TheFantasticWarrior/tetris-cpy',
-       ext_modules = [module1],
-       packages = find_packages(),
-       install_requires = ['numpy'])
+       ext_modules = [module1])

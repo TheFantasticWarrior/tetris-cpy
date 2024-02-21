@@ -1,3 +1,29 @@
+[project]
+name = "tetris_c"
+version = "0.1"
+authors = [
+  { name="TFW", email="tfwplssub@gmail.com" },
+]
+description = "Modern tetris python library, implemented in C++ for speed. Uses SDL2"
+readme = "README.md"
+license = {text = "MIT License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Environment :: MacOS X",
+    "Development Status :: 4 - Beta",
+    "Topic :: Games/Entertainment :: Puzzle Games",
+    "Topic :: Games/Entertainment",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[project.urls]
+Homepage = "https://github.com/TheFantasticWarrior/tetris-cpy" 
+Issues = "https://github.com/TheFantasticWarrior/tetris-cpy/issues"
+
 [build-system]
 requires = ["setuptools", "wheel", "numpy"]
 build-backend = "setuptools.build_meta"

@@ -344,7 +344,6 @@ class game_container {
 
                     int8_t* qdata = (int8_t*)PyArray_DATA(np_queue);
                     // Extract queue from the variables tuple
-                    int queue[5];
                     for (int i = 0; i < 5; ++i) {
                         this->queue[i] = (int)qdata[i];
                     }
