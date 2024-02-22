@@ -33,6 +33,7 @@ jobs:
           pip install build
           cd nore
           python -m build
+          cp -r dist ..
       - name: Publish package
         if: success()  # Only publish if build succeeded
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
