@@ -10,7 +10,7 @@
 
 #ifndef tb
 #define tb
-#include "tetrisboard.h"
+#include "board.h"
 #endif // !tb
 
 

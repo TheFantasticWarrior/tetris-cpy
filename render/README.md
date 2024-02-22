@@ -39,7 +39,9 @@ r.render(x)
 # close window
 r.close()
 ```
-# Install dependency:
+# Manually Install dependency:
+If you don't want to render/install sdl2 use my tetris\_c\_nore library instead
+
 Modify setup.py for include and lib directories of SDL2 if needed
 ## Windows:
 

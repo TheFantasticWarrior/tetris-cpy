@@ -1,10 +1,10 @@
 [project]
-name = "tetris_c"
+name = "tetris_c_nore"
 version = "0.1"
 authors = [
   { name="TFW", email="tfwplssub@gmail.com" },
 ]
-description = "Modern tetris python library, implemented in C++ for speed. Uses SDL2"
+description = 'Modern tetris python library, implemented in C++ for speed. No rendering in this version. Use the version without nore for render, rendering might require SDL2 if no binary is built on your platform'
 readme = "README.md"
 license = {text = "MIT License"}
 classifiers = [

@@ -5,7 +5,7 @@
 
 #ifndef tb
 #define tb
-#include "tetrisboard.h"
+#include "board.h"
 #endif // !tb
 
 
@@ -13,7 +13,10 @@
 #define io
 #include <iostream>
 #endif // !io
+#ifdef RENDER
 #include <SDL.h>
+#include <chrono>
+#endif
 //#include <tuple>
 #include <vector>
 #include <sstream>
@@ -671,7 +674,33 @@ static PyMethodDef gc_methods[] = {
     {"copy", (PyCFunction)game_container::copy, METH_NOARGS, "Copy game state"},
     {NULL, NULL, 0, NULL} // Sentinel
 };
+static PyTypeObject game_container_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+        .tp_name = "tetris.Container",
+    .tp_basicsize = sizeof(game_container),
+    .tp_itemsize = 0,
+    .tp_dealloc = (destructor)game_container::dealloc,
+    .tp_flags = Py_TPFLAGS_BASETYPE,//|Py_TPFLAGS_HEAPTYPE,
+    .tp_doc = "game_container objects\ninit(no arg):new game state\ninit(state,hidden_queue length, hidden queue,attack length, stored attacks)",
+    .tp_methods = gc_methods,
+    .tp_init = (initproc)game_container::init,
+    .tp_new = PyType_GenericNew,//game_container::_new,
+};
+game_container* game_container::copy(game_container* self, PyObject* Py_UNUSED) {
+    game_container* container = PyObject_New(game_container, &game_container_type);
 
+    if (container == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for game_container");
+        return NULL;
+    }
+
+    // Use the copy constructor to initialize the new object
+    new (container) game_container(*self);
+
+    return container;
+}
+
+#ifdef RENDER
 class game_renderer {
     public:
         PyObject_VAR_HEAD
@@ -708,25 +737,34 @@ class game_renderer {
         static int init(game_renderer* self, PyObject* args) {
             int render_mode = -1;
             int render_size=-1;
-
-            if (!PyArg_ParseTuple(args, "|ii", &render_mode, &render_size)) {
-                return -1;
+            float fps=-1;
+            if (!PyArg_ParseTuple(args, "|iii", &render_mode, &render_size,&fps)) {
+                return NULL;
             }
+            game_renderer* r;
             if (render_mode == -1 && render_size == -1)
-                new (self) game_renderer();
+                r = new (self) game_renderer();
             else
-                new (self) game_renderer(render_mode, render_size);
+                r = new (self) game_renderer(render_mode, render_size);
+            if (fps > 0) {
+                r->frameDuration = std::chrono::milliseconds((int)(1000/fps));
+
+            }
 
             return 0;
         }
         static PyObject* create_window(game_renderer* self, PyObject* args) {
             int mode = 1;
             int size = 30;
-            if (!PyArg_ParseTuple(args, "|ii", &mode, &size)) {
+            float fps=-1;
+            if (!PyArg_ParseTuple(args, "|iii", &mode, &size,&fps)) {
                 return NULL;
             }
             self->c_set_size(mode, size);
             self->c_create_window();
+            if (fps > 0) {
+                self->frameDuration = std::chrono::milliseconds((int)(1000/fps));
+            }
             Py_RETURN_NONE;
         }
         static PyObject* close(game_renderer* self, PyObject* Py_UNUSED) {
@@ -743,6 +781,8 @@ class game_renderer {
         SDL_Event event{};
         SDL_Window* window=nullptr;
         SDL_Renderer* renderer = nullptr;
+        std::chrono::steady_clock::time_point last=std::chrono::steady_clock::now();
+        std::chrono::duration<float, std::milli> frameDuration= std::chrono::milliseconds(100);
         int block_size=30;
         int BOARDX=0;
         int colors[9]{ //bg SZJLTOI garbage
@@ -973,32 +1013,6 @@ static PyMethodDef game_renderer_methods[] = {
     {"render", (PyCFunction)game_renderer::render, METH_VARARGS, "Render game, takes a Container object"},
     {NULL, NULL, 0, NULL} // Sentinel
 };
-
-static PyTypeObject game_container_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-        .tp_name = "tetris.Container",
-    .tp_basicsize = sizeof(game_container),
-    .tp_itemsize = 0,
-    .tp_dealloc = (destructor)game_container::dealloc,
-    .tp_flags = Py_TPFLAGS_BASETYPE,//|Py_TPFLAGS_HEAPTYPE,
-    .tp_doc = "game_container objects\ninit(no arg):new game state\ninit(state,hidden_queue length, hidden queue,attack length, stored attacks)",
-    .tp_methods = gc_methods,
-    .tp_init = (initproc)game_container::init,
-    .tp_new = PyType_GenericNew,//game_container::_new,
-};
-game_container* game_container::copy(game_container* self, PyObject* Py_UNUSED) {
-    game_container* container = PyObject_New(game_container, &game_container_type);
-
-    if (container == NULL) {
-        PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for game_container");
-        return NULL;
-    }
-
-    // Use the copy constructor to initialize the new object
-    new (container) game_container(*self);
-
-    return container;
-}
 PyObject* game_renderer::render(game_renderer* self, PyObject* args) {
 
     PyObject* pyg;
@@ -1025,13 +1039,18 @@ PyObject* game_renderer::render(game_renderer* self, PyObject* args) {
         PyErr_SetString(PyExc_RuntimeError, "Failed to retrieve game_container instance from the capsule.");
         return NULL;
     }
+
+    auto n=std::chrono::steady_clock::now();
     if (self->window_opened)
     {
-        self->c_render(*g);
-        SDL_PollEvent(&self->event);
-        if (self->event.type == SDL_QUIT) {
-            self->c_close();
-            return PyBool_FromLong(1);
+        if(n-self->last>self->frameDuration){
+            self->c_render(*g);
+            SDL_PollEvent(&self->event);
+            if (self->event.type == SDL_QUIT) {
+                self->c_close();
+                return PyBool_FromLong(1);
+            }
+            self->last=n;
         }
     }
     else {
@@ -1084,7 +1103,7 @@ static PyTypeObject game_renderer_type = {
     PyType_GenericNew,             // tp_new, create a new object
 };
 
-
+#endif
 static PyMethodDef Methods[] = {
     /*{"make",  make, METH_VARARGS,
       "Makes and returns the game container. "},
@@ -1112,12 +1131,12 @@ PyInit_tetris(void)
 
     Py_INCREF(&game_container_type);
     PyModule_AddObject(m, "Container", (PyObject*)&game_container_type);
-
+    #ifdef RENDER
     if (PyType_Ready(&game_renderer_type) < 0)
         return NULL;
     Py_INCREF(&game_renderer_type);
     PyModule_AddObject(m, "Renderer", (PyObject*)&game_renderer_type);
-
+    #endif
     return m;
 }
 int main(int argc, char* argv[]) {
