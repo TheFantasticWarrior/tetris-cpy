@@ -40,20 +40,3 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-  deploy_linux:
-    needs: common_steps
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-
-  deploy_windows:
-    needs: common_steps
-    strategy:
-      matrix:
-        os: [windows-latest]
-
-  deploy_macos:
-    needs: common_steps
-    strategy:
-      matrix:
-        os: [macos-latest]
