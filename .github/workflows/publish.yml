@@ -118,6 +118,7 @@ jobs:
         run: auditwheel repair render/dist/*.whl
       - name: move
         run: |
+          mkdir out
           mv wheelhouse/*.whl out/
           mv render/dist/*.tar.gz out/
 
@@ -144,6 +145,7 @@ jobs:
         run: auditwheel repair nore/dist/*.whl
       - name: move
         run: |
+          mkdir out
           mv wheelhouse/*.whl out/
           mv nore/dist/*.tar.gz out/
 
