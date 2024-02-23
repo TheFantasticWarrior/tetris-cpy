@@ -44,15 +44,16 @@ jobs:
           
       - name: Set up SDL2 Environment Variables
         run: |
-          echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include\SDL2" >> $GITHUB_ENV
-          echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
-          ls "$(Get-Location)\SDL2\include"
+          $SDL2_Version = (Get-ChildItem "$(Get-Location)\SDL2" | Where-Object { $_.PSIsContainer }).Name
+          echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\$SDL2_Version\include\SDL2" >> $env:GITHUB_ENV
+          echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\$SDL2_Version\lib" >> $env:GITHUB_ENV
+          ls "$(Get-Location)\SDL2\$SDL2_Version\include"
       - name: Install and build
         run: |
           cd render
           python -m pip install --upgrade pip
           pip install build
-          python -m build
+          python -m build --wheel
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -104,8 +105,9 @@ jobs:
           cd nore
           if [ "${{ runner.os }}" = "macOS" ]; then
             export CFLAGS="-std=c++11"
+            python -m build --sdist
           fi
-          python -m build
+          python -m build --wheel
         shell: bash
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
