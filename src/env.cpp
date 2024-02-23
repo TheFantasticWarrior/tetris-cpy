@@ -675,7 +675,7 @@ static PyMethodDef gc_methods[] = {
     {NULL, NULL, 0, NULL} // Sentinel
 };
 static PyTypeObject game_container_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
         .tp_name = "tetris.Container",
     .tp_basicsize = sizeof(game_container),
     .tp_itemsize = 0,
