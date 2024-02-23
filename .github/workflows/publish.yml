@@ -110,7 +110,7 @@ jobs:
           cd render
           yum -y install SDL2-devel
           #sudo apt-get install libsdl2-dev
-          export CFLAGS="-I/usr/include/SDL2" 
+          export CFLAGS="-I/usr/include/SDL2 -std=c++20" 
           export LDFLAGS="-L/usr/lib" 
           for PYBIN in /opt/python/*/bin; do
             "${PYBIN}/pyproject-build"
@@ -131,6 +131,7 @@ jobs:
       - name: Install and build
         run: |
           cd nore
+          export CFLAGS="-std=c++20" 
           for PYBIN in /opt/python/*/bin; do
             "${PYBIN}/pyproject-build"
           done
