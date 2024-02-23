@@ -14,13 +14,14 @@ jobs:
           python-version: '3.x'
       - name: Install and build
         run: |
+          echo `ls`
+          echo `ls ..`
+          cd ${{ github.workspace }}/render
           sudo apt-get install libsdl2-dev
           export CFLAGS="-I/usr/include/SDL2" 
           export LDFLAGS="-L/usr/lib" 
           python -m pip install --upgrade pip
           pip install build auditwheel
-          echo `ls`
-          cd ${{ github.workspace }}/render
           python -m build
           auditwheel repair dist/*.whl
       - name: Upload artifacts
@@ -104,6 +105,7 @@ jobs:
             export CXXFLAGS="--std=c++11"
           fi
           python -m build
+        shell: bash
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
