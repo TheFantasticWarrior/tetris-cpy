@@ -44,9 +44,9 @@ jobs:
           
       - name: Set up SDL2 Environment Variables
         run: |
-          echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include" >> $GITHUB_ENV
+          echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include\SDL2" >> $GITHUB_ENV
           echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
-          ls $(Get-Location)\SDL2\include
+          ls "$(pwd)\SDL2\include"
       - name: Install and build
         run: |
           cd render
@@ -71,13 +71,13 @@ jobs:
         run: |
           brew update
           brew install sdl2
-          SDL2_VERSION=$(brew info sdl2 --json | jq -r '.[0].versions.stable')
-
-          export CFLAGS="-std=c++11 -I/usr/local/Cellar/sdl2/$SDL2_VERSION/include/SDL2" 
-          export LDFLAGS="-L/usr/local/Cellar/sdl2/$SDL2_VERSION/lib" 
       - name: Install and build
         run: |
           cd render
+
+          SDL2_VERSION=$(brew info sdl2 --json | jq -r '.[0].versions.stable')
+          export CFLAGS="-std=c++11 -I/usr/local/Cellar/sdl2/$SDL2_VERSION/include/SDL2"
+          export LDFLAGS="-L/usr/local/Cellar/sdl2/$SDL2_VERSION/lib"
           python -m pip install --upgrade pip
           pip install build
           python -m build
@@ -102,7 +102,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
           cd nore
-          if [ "${{ runner.os }}" = "macos-latest" ]; then
+          if [ "${{ runner.os }}" = "macOS" ]; then
             export CFLAGS="-std=c++11"
           fi
           python -m build
