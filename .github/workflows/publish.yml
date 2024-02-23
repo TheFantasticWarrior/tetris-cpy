@@ -31,11 +31,11 @@ jobs:
           cd render
           python -m pip install --upgrade pip
           pip install build
-          set SDL2_INCLUDE_DIR=$(SDL2_INCLUDE_DIR)
-          set SDL2_LIB_DIR=$(SDL2_LIB_DIR)
+          set SDL2_INCLUDE_DIR=%SDL2_INCLUDE_DIR%
+          set SDL2_LIB_DIR=%SDL2_LIB_DIR%
           python -m build
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: built-package
           path: render/dist/*.whl
@@ -63,7 +63,7 @@ jobs:
           pip install build
           python -m build
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: built-package
           path: render/dist/*.whl
@@ -89,7 +89,7 @@ jobs:
           python -m build
         shell: bash
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: built-package
           path: nore/dist/*.whl
@@ -112,7 +112,7 @@ jobs:
           done
           auditwheel repair dist.whl
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: built-package
           path: render/dist/
@@ -131,7 +131,7 @@ jobs:
           done
           auditwheel repair dist.whl
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: built-package
           path: nore/dist/
@@ -142,7 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: built-package
           path: dist/*.whl
