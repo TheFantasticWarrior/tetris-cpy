@@ -21,7 +21,6 @@ shapes=x.get_shapes() # (7,4,4,4) 7 pieces 4 rotations and 4x4 shape
 x.step(ac1,ac2)
 ```
 
-individual attacks `state[465:]`
 ## Render
 `Renderer(mode,size)`
 or
@@ -76,6 +75,7 @@ p1_state=state[0:232]
 p2_state=state[232:464]
 ```
 sum attack `state[464]`, negative is to p1
+individual attacks `state[465:]`
 ## Reward
 state[0] is reward
 

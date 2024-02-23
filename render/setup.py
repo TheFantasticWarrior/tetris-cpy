@@ -16,5 +16,7 @@ setup (name = 'tetris_c',
        author='TFW',
        author_email='tfwplssub@gmail.com',
        url='https://github.com/TheFantasticWarrior/tetris-cpy',
-       ext_modules = [module1])
+       ext_modules = [module1],
+       install_requires=["numpy"]
+       )
 

@@ -18,7 +18,7 @@ jobs:
           export CFLAGS="-I/usr/include/SDL2" 
           export LDFLAGS="-L/usr/lib" 
           python -m pip install --upgrade pip
-          pip install build,auditwheel
+          pip install build auditwheel
           cd render
           python -m build
           auditwheel repair dist/*.whl
@@ -40,8 +40,12 @@ jobs:
           mkdir SDL2
           curl -L https://www.libsdl.org/release/SDL2-devel-2.0.14-VC.zip -o SDL2/SDL2.zip
           Expand-Archive -Path SDL2/SDL2.zip -DestinationPath SDL2
-          echo "::add-path::$(Get-Location)\SDL2\lib"
-          echo "::add-path::$(Get-Location)\SDL2\include"
+          
+      - name: Set C++ flags
+        run: |
+          echo "export CPPFLAGS=\"-I$(Get-Location)\SDL2\include\"" >> $GITHUB_ENV
+          echo "export LDFLAGS=\"-L$(Get-Location)\SDL2\lib\"" >> $GITHUB_ENV
+
       - name: Install and build
         run: |
           python -m pip install --upgrade pip
@@ -70,6 +74,8 @@ jobs:
           python -m pip install --upgrade pip
           export CXXFLAGS="-std=c++11"
           pip install build
+          pwd
+          ls
           cd render
           python -m build
       - name: Upload artifacts
@@ -93,6 +99,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
           cd nore
+          export CXXFLAGS="-std=c++11"
           python -m build
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -101,7 +108,7 @@ jobs:
           path: nore/dist/*
 
   publish:
-    needs: [build_linux, build_windows, build_macos]
+    needs: [build_linux, build_windows, build_macos,common_steps]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts

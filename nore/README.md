@@ -21,21 +21,8 @@ shapes=x.get_shapes() # (7,4,4,4) 7 pieces 4 rotations and 4x4 shape
 x.step(ac1,ac2)
 ```
 
-individual attacks `state[465:]`
 # Render
-Switch to my tetris\_c library and install SDL2 below if manual compile is needed
-## Install dependency:
-Modify setup.py for include and lib directories of SDL2 if needed
-### Windows:
-
-Visual Studio: `vcpkg install sdl:x64-windows`\
-MinGW: [Link](https://github.com/libsdl-org/SDL/releases/latest)
-
-### Mac/Linux:
-On Mac install [brew](https://brew.sh)(package manager for mac)
-
-Install sdl2(sometimes libsdl2-dev) with package manager
-
+Switch to my tetris\_c library and install SDL2 below if manual compile is needed. 
 
 # In Depth Info
 ## Game Step
@@ -59,6 +46,7 @@ p1_state=state[0:232]
 p2_state=state[232:464]
 ```
 sum attack `state[464]`, negative is to p1
+individual attacks `state[465:]`
 ## Reward
 state[0] is reward
 

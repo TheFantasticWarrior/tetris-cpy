@@ -5,6 +5,7 @@ authors = [
   { name="TFW", email="tfwplssub@gmail.com" },
 ]
 description = 'Modern tetris python library, implemented in C++ for speed. Requires SDL2 to render, if you dont want rendering choose the tetris_c_nore version'
+dependencies = ["numpy"]
 readme = "README.md"
 license = {text = "MIT License"}
 classifiers = [
