@@ -5,28 +5,6 @@ permissions:
   contents: read
 
 jobs:
-  build_linux:
-    runs-on: ubuntu-latest
-    container: 
-      quay.io/pypa/manylinux_2_28_x86_64
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install and build
-        run: |
-          cd render
-          yum -y install SDL2-devel
-          #sudo apt-get install libsdl2-dev
-          export CFLAGS="-I/usr/include/SDL2" 
-          export LDFLAGS="-L/usr/lib" 
-          for PYBIN in /opt/python/*/bin; do
-            "${PYBIN}/pyproject-build"
-          done
-          auditwheel repair dist.whl
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: built-package
-          path: render/dist
 
   build_windows:
     runs-on: windows-latest
@@ -53,12 +31,14 @@ jobs:
           cd render
           python -m pip install --upgrade pip
           pip install build
-          python -m build --wheel
+          set SDL2_INCLUDE_DIR=$(SDL2_INCLUDE_DIR)
+          set SDL2_LIB_DIR=$(SDL2_LIB_DIR)
+          python -m build
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: built-package
-          path: render/dist
+          path: render/dist/*.whl
 
   build_macos:
     runs-on: macos-latest
@@ -86,12 +66,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: built-package
-          path: render/dist
-  common_steps:
+          path: render/dist/*.whl
+  nore_build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -105,24 +85,66 @@ jobs:
           cd nore
           if [ "${{ runner.os }}" = "macOS" ]; then
             export CFLAGS="-std=c++11"
-            python -m build --sdist
           fi
-          python -m build --wheel
+          python -m build
         shell: bash
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: built-package
-          path: nore/dist
+          path: nore/dist/*.whl
+  build_linux:
+    needs: [build_windows, build_macos,nore_build]
+    runs-on: ubuntu-latest
+    container: 
+      quay.io/pypa/manylinux_2_28_x86_64
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install and build
+        run: |
+          cd render
+          yum -y install SDL2-devel
+          #sudo apt-get install libsdl2-dev
+          export CFLAGS="-I/usr/include/SDL2" 
+          export LDFLAGS="-L/usr/lib" 
+          for PYBIN in /opt/python/*/bin; do
+            "${PYBIN}/pyproject-build"
+          done
+          auditwheel repair dist.whl
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-package
+          path: render/dist/
+  build_linux_nore:
+    needs: [build_linux, build_windows, build_macos,nore_build]
+    runs-on: ubuntu-latest
+    container: 
+      quay.io/pypa/manylinux_2_28_x86_64
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install and build
+        run: |
+          cd nore
+          for PYBIN in /opt/python/*/bin; do
+            "${PYBIN}/pyproject-build"
+          done
+          auditwheel repair dist.whl
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-package
+          path: nore/dist/
+
 
   publish:
-    needs: [build_linux, build_windows, build_macos,common_steps]
+    needs: [build_linux, build_linux_nore, build_windows, build_macos,nore_build]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: built-package
-          path: dist
+          path: dist/*.whl
       - name: list packages
-        run: ls dist
+        run: ls dist/*.whl
