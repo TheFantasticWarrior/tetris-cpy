@@ -31,8 +31,9 @@ jobs:
           cd render
           python -m pip install --upgrade pip
           pip install build
-          set SDL2_INCLUDE_DIR=%SDL2_INCLUDE_DIR%
-          set SDL2_LIB_DIR=%SDL2_LIB_DIR%
+          set CFLAGS=-I%SDL2_INCLUDE_DIR%
+          set LDFLAGS=-L%SDL2_LIB_DIR%
+          $env:CFLAGS += " -std=c++20"
           python -m build
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
@@ -83,6 +84,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
           cd nore
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            export CFLAGS="-std=c++20"
+
           if [ "${{ runner.os }}" = "macOS" ]; then
             export CFLAGS="-std=c++11"
           fi
