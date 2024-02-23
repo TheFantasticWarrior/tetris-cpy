@@ -43,9 +43,9 @@ jobs:
           Expand-Archive -Path SDL2/SDL2.zip -DestinationPath SDL2
           
       - name: Set up SDL2 Environment Variables
-  run: |
-    echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include" >> $GITHUB_ENV
-    echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
+        run: |
+          echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include" >> $GITHUB_ENV
+          echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
       - name: Install and build
         run: |
           cd render
