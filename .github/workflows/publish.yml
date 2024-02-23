@@ -24,7 +24,7 @@ jobs:
         run: |
           $SDL2_Version = (Get-ChildItem "$(Get-Location)\SDL2" | Where-Object { $_.PSIsContainer }).Name
           echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\$SDL2_Version\include" >> $env:GITHUB_ENV
-          echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\$SDL2_Version\lib" >> $env:GITHUB_ENV
+          echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\$SDL2_Version\lib\\x64" >> $env:GITHUB_ENV
           ls "$(Get-Location)\SDL2\$SDL2_Version\include"
       - name: Install and build
         run: |
@@ -33,7 +33,7 @@ jobs:
           pip install build
           $env:INCLUDE += ";$env:SDL2_INCLUDE_DIR"
           $env:LIB += ";$env:SDL2_LIB_DIR"
-          $env:CL= "/std:c++20 /subsystem:windows $env:CL"
+          $env:CL= "/std:c++20 $env:CL"
           echo $env
           python -m build
       - name: Upload artifacts
