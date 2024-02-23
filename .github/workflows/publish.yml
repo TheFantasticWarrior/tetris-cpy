@@ -7,21 +7,20 @@ permissions:
 jobs:
   build_linux:
     runs-on: ubuntu-latest
+    container: 
+      quay.io/pypa/manylinux_2_28_x86_64
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: '3.x'
       - name: Install and build
         run: |
           cd render
-          sudo apt-get install libsdl2-dev
+          yum install SDL2-devel
+          #sudo apt-get install libsdl2-dev
           export CFLAGS="-I/usr/include/SDL2" 
           export LDFLAGS="-L/usr/lib" 
-          python -m pip install --upgrade pip
-          pip install build auditwheel
-          python -m build
+          for PYBIN in /opt/python/*/bin; do
+            "${PYBIN}/pyproject-build"
+          done
           auditwheel repair dist/*.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -43,11 +42,10 @@ jobs:
           curl -L https://www.libsdl.org/release/SDL2-devel-2.0.14-VC.zip -o SDL2/SDL2.zip
           Expand-Archive -Path SDL2/SDL2.zip -DestinationPath SDL2
           
-      - name: Set C++ flags
-        run: |
-          echo "export CPPFLAGS=\"-I$(Get-Location)\SDL2\include\"" >> $GITHUB_ENV
-          echo "export LDFLAGS=\"-L$(Get-Location)\SDL2\lib\"" >> $GITHUB_ENV
-
+      - name: Set up SDL2 Environment Variables
+  run: |
+    echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include" >> $GITHUB_ENV
+    echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
       - name: Install and build
         run: |
           cd render
