@@ -21,12 +21,12 @@ jobs:
           for PYBIN in /opt/python/*/bin; do
             "${PYBIN}/pyproject-build"
           done
-          auditwheel repair dist/*.whl
+          auditwheel repair dist.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: built-package
-          path: render/dist/*
+          path: render/dist
 
   build_windows:
     runs-on: windows-latest
@@ -46,7 +46,7 @@ jobs:
         run: |
           echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include\SDL2" >> $GITHUB_ENV
           echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
-          ls "$(pwd)\SDL2\include"
+          ls "$(Get-Location)\SDL2\include"
       - name: Install and build
         run: |
           cd render
@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: built-package
-          path: render/dist/*
+          path: render/dist
 
   build_macos:
     runs-on: macos-latest
@@ -76,7 +76,7 @@ jobs:
           cd render
 
           SDL2_VERSION=$(brew info sdl2 --json | jq -r '.[0].versions.stable')
-          export CFLAGS="-std=c++11 -I/usr/local/Cellar/sdl2/$SDL2_VERSION/include/SDL2"
+          export CFLAGS="-std=c++11 -I/usr/local/Cellar/sdl2/$SDL2_VERSION/include/SDL2 -DSDL_DISABLE_IMMINTRIN_H"
           export LDFLAGS="-L/usr/local/Cellar/sdl2/$SDL2_VERSION/lib"
           python -m pip install --upgrade pip
           pip install build
@@ -85,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: built-package
-          path: render/dist/*
+          path: render/dist
   common_steps:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -111,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: built-package
-          path: nore/dist/*
+          path: nore/dist
 
   publish:
     needs: [build_linux, build_windows, build_macos,common_steps]
