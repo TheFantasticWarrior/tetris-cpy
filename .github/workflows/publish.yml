@@ -115,7 +115,7 @@ jobs:
             "${PYBIN}/pyproject-build"
           done
       - name: repair
-        run: auditwheel repair dist/*.whl
+        run: auditwheel repair render/dist/*.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -134,7 +134,7 @@ jobs:
             "${PYBIN}/pyproject-build"
           done
       - name: repair
-        run: auditwheel repair dist/*.whl
+        run: auditwheel repair nore/dist/*.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -150,6 +150,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: built-package
-          path: dist/*.whl
+          path: dist
       - name: list packages
-        run: ls dist/*.whl
+        run: ls dist
+
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
