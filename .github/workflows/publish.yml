@@ -120,7 +120,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: built-package
-          path: render/dist/
+          path: |
+            render/dist/*many*.whl
+            render/dist/*.tar.gz
   build_linux_nore:
     runs-on: ubuntu-latest
     container: 
@@ -139,7 +141,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: built-package
-          path: nore/dist/
+          path: |
+            nore/dist/*many*.whl
+            nore/dist/*.tar.gz
 
 
   publish:
