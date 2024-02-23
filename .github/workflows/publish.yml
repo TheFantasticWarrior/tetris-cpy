@@ -8,15 +8,14 @@ jobs:
   build_linux:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.x'
       - name: Install and build
         run: |
-          echo `ls`
-          echo `ls ..`
-          cd ${{ github.workspace }}/render
+          cd render
           sudo apt-get install libsdl2-dev
           export CFLAGS="-I/usr/include/SDL2" 
           export LDFLAGS="-L/usr/lib" 
@@ -33,6 +32,7 @@ jobs:
   build_windows:
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
@@ -50,8 +50,7 @@ jobs:
 
       - name: Install and build
         run: |
-          echo `ls`
-          cd ${{ github.workspace }}/render
+          cd render
           python -m pip install --upgrade pip
           pip install build
           python -m build
@@ -64,6 +63,7 @@ jobs:
   build_macos:
     runs-on: macos-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
@@ -74,8 +74,7 @@ jobs:
           brew install sdl2
       - name: Install and build
         run: |
-          echo `ls`
-          cd ${{ github.workspace }}/render
+          cd render
           python -m pip install --upgrade pip
           export CXXFLAGS="-std=c++11"
           pip install build
@@ -100,7 +99,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install build
-          cd ${{ github.workspace }}/nore
+          cd nore
           if [ "${{ runner.os }}" = "macos-latest" ]; then
             export CXXFLAGS="--std=c++11"
           fi
