@@ -115,7 +115,7 @@ jobs:
             "${PYBIN}/pyproject-build"
           done
       - name: repair
-          auditwheel repair dist/*.whl
+        run: auditwheel repair dist/*.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -134,7 +134,7 @@ jobs:
             "${PYBIN}/pyproject-build"
           done
       - name: repair
-          auditwheel repair dist/*.whl
+        run: auditwheel repair dist/*.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
