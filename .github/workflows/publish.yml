@@ -33,7 +33,7 @@ jobs:
           pip install build
           $env:INCLUDE += ";$env:SDL2_INCLUDE_DIR"
           $env:LIB += ";$env:SDL2_LIB_DIR"
-          $env:CL+= ";/std:c++20"
+          $env:CL= "/std:c++20"
           echo $env
           python -m build
       - name: Upload artifacts
@@ -86,7 +86,7 @@ jobs:
           pip install build
           cd nore
           if [ "${{ runner.os }}" = "Windows" ]; then
-            export CL+=/std:c++20
+            export CL="/std:c++20 $CL"
 
           elif [ "${{ runner.os }}" = "macOS" ]; then
             export CFLAGS="-std=c++11"
