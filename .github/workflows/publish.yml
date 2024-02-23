@@ -19,7 +19,7 @@ jobs:
           export LDFLAGS="-L/usr/lib" 
           python -m pip install --upgrade pip
           pip install build auditwheel
-          cd $GITHUB_WORKSPACE/render
+          cd ${{ github.workspace }}/render
           python -m build
           auditwheel repair dist/*.whl
       - name: Upload artifacts
@@ -48,9 +48,9 @@ jobs:
 
       - name: Install and build
         run: |
+          cd ${{ github.workspace }}/render
           python -m pip install --upgrade pip
           pip install build
-          cd $GITHUB_WORKSPACE/render
           python -m build
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -71,12 +71,10 @@ jobs:
           brew install sdl2
       - name: Install and build
         run: |
+          cd ${{ github.workspace }}/render
           python -m pip install --upgrade pip
           export CXXFLAGS="-std=c++11"
           pip install build
-          pwd
-          ls
-          cd $GITHUB_WORKSPACE/render
           python -m build
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -98,7 +96,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install build
-          cd $GITHUB_WORKSPACE/nore
+          cd ${{ github.workspace }}/nore
           export CXXFLAGS="-std=c++11"
           python -m build
       - name: Upload artifacts
