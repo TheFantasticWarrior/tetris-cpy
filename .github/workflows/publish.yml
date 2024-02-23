@@ -46,7 +46,7 @@ jobs:
         run: |
           echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include" >> $GITHUB_ENV
           echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
-          ls $(Get-Location)\SDL2\include"
+          ls $(Get-Location)\SDL2\include
       - name: Install and build
         run: |
           cd render
@@ -71,11 +71,14 @@ jobs:
         run: |
           brew update
           brew install sdl2
+          SDL2_VERSION=$(brew info sdl2 --json | jq -r '.[0].versions.stable')
+
+          export CFLAGS="-std=c++11 -I/usr/local/Cellar/sdl2/$SDL2_VERSION/include/SDL2" 
+          export LDFLAGS="-L/usr/local/Cellar/sdl2/$SDL2_VERSION/lib" 
       - name: Install and build
         run: |
           cd render
           python -m pip install --upgrade pip
-          export CFLAGS="-std=c++11"
           pip install build
           python -m build
       - name: Upload artifacts
@@ -100,7 +103,7 @@ jobs:
           pip install build
           cd nore
           if [ "${{ runner.os }}" = "macos-latest" ]; then
-            export CXX="-std=c++11"
+            export CFLAGS="-std=c++11"
           fi
           python -m build
         shell: bash
