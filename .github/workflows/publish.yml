@@ -14,7 +14,7 @@ jobs:
       - name: Install and build
         run: |
           cd render
-          yum install SDL2-devel
+          yum -y install SDL2-devel
           #sudo apt-get install libsdl2-dev
           export CFLAGS="-I/usr/include/SDL2" 
           export LDFLAGS="-L/usr/lib" 
@@ -46,6 +46,7 @@ jobs:
         run: |
           echo "SDL2_INCLUDE_DIR=$(Get-Location)\SDL2\include" >> $GITHUB_ENV
           echo "SDL2_LIB_DIR=$(Get-Location)\SDL2\lib" >> $GITHUB_ENV
+          ls $(Get-Location)\SDL2\include"
       - name: Install and build
         run: |
           cd render
@@ -74,7 +75,7 @@ jobs:
         run: |
           cd render
           python -m pip install --upgrade pip
-          export CXXFLAGS="-std=c++11"
+          export CFLAGS="-std=c++11"
           pip install build
           python -m build
       - name: Upload artifacts
@@ -99,7 +100,7 @@ jobs:
           pip install build
           cd nore
           if [ "${{ runner.os }}" = "macos-latest" ]; then
-            export CXXFLAGS="--std=c++11"
+            export CXX="-std=c++11"
           fi
           python -m build
         shell: bash
