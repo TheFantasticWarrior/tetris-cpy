@@ -121,7 +121,7 @@ jobs:
         with:
           name: built-package
           path: |
-            render/dist/*many*.whl
+            wheelhouse/*.whl
             render/dist/*.tar.gz
   build_linux_nore:
     runs-on: ubuntu-latest
@@ -142,7 +142,7 @@ jobs:
         with:
           name: built-package
           path: |
-            nore/dist/*many*.whl
+            wheelhouse/*.whl
             nore/dist/*.tar.gz
 
 
