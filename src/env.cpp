@@ -14,7 +14,6 @@
 #include <iostream>
 #endif // !io
 #ifdef RENDER
-#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <chrono>
 #endif
@@ -676,7 +675,49 @@ static PyMethodDef gc_methods[] = {
     {NULL, NULL, 0, NULL} // Sentinel
 };
 static PyTypeObject game_container_type = {
-    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
+        "tetris.Container",  // name of the type
+    sizeof(game_container),         // size of the type
+    0,                             // itemsize, set to 0 for variable-sized objects
+    (destructor)game_container::dealloc,  // tp_dealloc, destructor function
+    0,                             // tp_print
+    0,                             // tp_getattr
+    0,                             // tp_setattr
+    0,                             // tp_reserved
+    0,                             // tp_repr
+    0,                             // tp_as_number
+    0,                             // tp_as_sequence
+    0,                             // tp_as_mapping
+    0,                             // tp_hash
+    0,                             // tp_call
+    0,                             // tp_str
+    0,                             // tp_getattro
+    0,                             // tp_setattro
+    0,                             // tp_as_buffer
+    Py_TPFLAGS_BASETYPE,  // tp_flags
+    "Game Container",       // tp_doc, documentation string
+    0,                             // tp_traverse
+    0,                             // tp_clear
+    0,                             // tp_richcompare
+    0,                             // tp_weaklistoffset
+    0,                             // tp_iter
+    0,                             // tp_iternext
+    gc_methods,        // tp_methods, methods of the type
+    0,                             // tp_members
+    0,                             // tp_getset
+    0,                             // tp_base
+    0,                             // tp_dict
+    0,                             // tp_descr_get
+    0,                             // tp_descr_set
+    0,                             // tp_dictoffset
+    (initproc)game_container::init,  // tp_init, constructor function
+    0,                             // tp_alloc
+    PyType_GenericNew,             // tp_new, create a new object
+};
+
+/* breaks on windows?
+static PyTypeObject game_container_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
         .tp_name = "tetris.Container",
     .tp_basicsize = sizeof(game_container),
     .tp_itemsize = 0,
@@ -687,6 +728,7 @@ static PyTypeObject game_container_type = {
     .tp_init = (initproc)game_container::init,
     .tp_new = PyType_GenericNew,//game_container::_new,
 };
+*/
 game_container* game_container::copy(game_container* self, PyObject* Py_UNUSED) {
     game_container* container = PyObject_New(game_container, &game_container_type);
 
