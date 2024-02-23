@@ -116,13 +116,18 @@ jobs:
           done
       - name: repair
         run: auditwheel repair render/dist/*.whl
+      - name: move
+        run: |
+          mv wheelhouse/*.whl out/
+          mv render/dist/*.tar.gz out/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: built-package
-          path: |
-            wheelhouse/*.whl
-            render/dist/*.tar.gz
+          path: out
+
+
   build_linux_nore:
     runs-on: ubuntu-latest
     container: 
@@ -137,13 +142,16 @@ jobs:
           done
       - name: repair
         run: auditwheel repair nore/dist/*.whl
+      - name: move
+        run: |
+          mv wheelhouse/*.whl out/
+          mv nore/dist/*.tar.gz out/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: built-package
-          path: |
-            wheelhouse/*.whl
-            nore/dist/*.tar.gz
+          path: out
 
 
   publish:
