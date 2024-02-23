@@ -14,6 +14,7 @@
 #include <iostream>
 #endif // !io
 #ifdef RENDER
+#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <chrono>
 #endif
