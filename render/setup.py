@@ -5,7 +5,7 @@ module1 = Extension('tetris',
                     define_macros = [('RENDER', '1')],
                     include_dirs=[#'/usr/include/SDL2', # adjust if needed, or use env var
                                   "../src",np.get_include()],
-                    libraries=['SDL2'],
+                    #libraries=['SDL2'],
                     #library_dirs=['/usr/lib'], # adjust if needed
                     sources = ['src/board.cpp', 'src/env.cpp'],
                     )
