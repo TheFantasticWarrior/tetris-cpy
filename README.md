@@ -110,7 +110,7 @@ Less cheating because you can manually count the bag:
 
 
 Board `state[22:232].reshape(21,10)`
-
+pieces order SZJLTOI
 # Feedback
 Any ideas for improvements are welcome. 
 

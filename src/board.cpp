@@ -466,6 +466,9 @@ void game::place(){
         for (int8_t j=0;j<4;j++){
             if(piecedefs[active][rotation][j][i]!=-1){
                 if (board[y+j][x+i]==-1){
+                    if(x+i>=COLUMNS){
+                        std::cout<<(int)active<<(int)rotation<<(int)x<<"broken\n";
+                    }
                     board[y+j][x+i]=piecedefs[active][rotation][j][i];
                     if (y + j < 10)
                     {
@@ -493,13 +496,11 @@ void game::new_piece(){
     x = 3;
     active=queue[0];
     std::copy(queue+1,queue+5,queue);
-    queue[4]=hidden_queue[0];
-    for(int i=0;i<5;i++){
-    }
-    hidden_queue.erase(hidden_queue.begin());
-    if (hidden_queue.size()==0){
+    if (hidden_queue.empty()) {
         bag_randomizer();
-    }
+    } 
+    queue[4] = hidden_queue[0];
+    hidden_queue.erase(hidden_queue.begin());
     rotation=0;
     spawn_game_over();
 }
@@ -533,7 +534,9 @@ void game::hold() {
             int temp=held_piece;
             held_piece = active;
             active=temp;
-            
+            x=3;
+            y=9;
+            rotation=0;
             spawn_game_over();
 
         }

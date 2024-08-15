@@ -4,6 +4,7 @@ import numpy as np
 module1 = Extension('tetris',
                     define_macros = [('RENDER', '1')],
                     include_dirs=[#'/usr/include/SDL2', # adjust if needed, or use env var
+                                  # for example CFLAGS="-I/usr/include/SDL2" pip install path/to/package
                                   "../src",np.get_include()],
                     libraries=['SDL2'],
                     #library_dirs=['/usr/lib'], # adjust if needed

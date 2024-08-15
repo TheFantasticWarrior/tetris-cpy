@@ -14,7 +14,7 @@
 #include <iostream>
 #endif // !io
 #ifdef RENDER
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <chrono>
 #endif
 //#include <tuple>
@@ -117,13 +117,14 @@ class game_container {
                     game::random_recv(3);
                 }
                 void harddrop() {
+                    //std::cout<<port<<"harddropped\n";
                     game::harddrop();
                     action_count = 0;
 
                     if (combo)
                         server->send(port, attack);
                     else receive(server->receive(port));
-                    new_piece();
+                    game::new_piece();
 
                 }
                 void game_step(int action) {
@@ -149,19 +150,15 @@ class game_container {
                                 rotate(-1);
                                 break;
                             case 4:
-                                //x = x;
                                 move(0, -1);
                                 break;
                             case 5:
-                                //x = x;
                                 move(0, 1);
                                 break;
                             case 6:
-                                //x = x;
                                 move(1, -1);
                                 break;
                             case 7:
-                                //x = x;
                                 move(1, 1);
                                 break;
                             case 8:
@@ -175,6 +172,7 @@ class game_container {
                                 break;
                         }
                     }
+                    //std::cout<<port<<action<<"\n";
                 }
 
                 PyObject* serialize() const {
@@ -595,9 +593,9 @@ class game_container {
                     state[i * 10 + j + 22] = self->clients[0]->board[i + 9][j] + 1 > 0;
                 }
             }
-            state[232 + 1] = self->clients[0]->x+2;
-            state[232 + 2] = self->clients[0]->y-8;
-            state[232 + 3] = self->clients[0]->softdropdist();
+            state[232 + 1] = self->clients[1]->x+2;
+            state[232 + 2] = self->clients[1]->y-8;
+            state[232 + 3] = self->clients[1]->softdropdist();
             state[232 + 4] = self->clients[1]->rotation;
 
             
@@ -616,7 +614,7 @@ class game_container {
             }
             for (size_t i = 0; i < 21; ++i) {
                 for (size_t j = 0; j < 10; ++j) {
-                    state[i * 10 + j + 254] = self->clients[0]->board[i + 9][j] + 1 > 0;
+                    state[i * 10 + j + 254] = self->clients[1]->board[i + 9][j] + 1 > 0;
                 }
             }
 
@@ -907,20 +905,25 @@ class game_renderer {
             SDL_SetRenderDrawColor(renderer, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF, 0x99);
         }
         void c_render(const game_container& g) {
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
-            bg.x = BOARDX;
-            /*
-               frameCount++;
-               int timerFPS = SDL_GetTicks() - lastFrame;
-               if (timerFPS < (8)) {
-               SDL_Delay((8) - timerFPS);
-               }
-               */
-            draw(*g.clients[0], 0);
-            draw(*g.clients[1], BOARDX * 5);
-            if(g.server->stored_attack!=0) draw_atk(g.server->stored_attack>0,g.server->attack_queue);
-            SDL_RenderPresent(renderer);
+            try{
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_RenderClear(renderer);
+                bg.x = BOARDX;
+                /*
+                   frameCount++;
+                   int timerFPS = SDL_GetTicks() - lastFrame;
+                   if (timerFPS < (8)) {
+                   SDL_Delay((8) - timerFPS);
+                   }
+                   */
+                draw(*g.clients[0], 0);
+                draw(*g.clients[1], BOARDX * 5);
+                if(g.server->stored_attack!=0) draw_atk(g.server->stored_attack>0,g.server->attack_queue);
+                SDL_RenderPresent(renderer);
+            } catch(const std::exception& e) {
+                std::cerr << "Exception occurred: " << e.what() << std::endl;
+                c_close();
+            }
         }
         void draw(const game& g, int xloc) {
             int ghosty;
@@ -1031,19 +1034,20 @@ class game_renderer {
             //}
         }
         void draw_atk(int side, std::vector<int8_t> attacks) {
-            red_line.x = BOARDX*4 + 11 * (block_size + 1) + side * BOARDX * 5;
+            red_line.x = BOARDX*1 + 10 * (block_size + 1) + side * BOARDX * 5;
+            red_line_small.x = red_line.x;
             int sum = 0;
 
             SDL_SetRenderDrawColor(renderer,255,0,0,255);
             for (int i:attacks)
             {
-                for (size_t j = sum; j < sum+i-1; j++)
+                for (size_t j = sum; j < sum+i; j++)
                 {
-                    red_line.y = 21* block_size -block_size / 2 - j * (block_size + 1);
+                    red_line.y = 21* block_size +block_size / 2 - j * (block_size + 1);
                     SDL_RenderFillRect(renderer, &red_line);
                 }
                 sum += i - 1;
-                red_line_small.y = 21 * block_size - block_size / 2 - sum * (block_size + 1);
+                red_line_small.y = 21 * block_size + block_size / 2 - sum * (block_size + 1);
                 sum += 1;
                 SDL_RenderFillRect(renderer, &red_line_small);
 
