@@ -241,7 +241,34 @@ void game::eval_board()
     }
 
 }*/
-
+/*float game::check_filled(){
+    int filled=0;
+    int row_empty;
+    for(int i=29;i>=0;i--){
+        row_empty=0;
+        for (int j=0;j<10;j++){
+            if(board[i][j]!=-1)filled++;
+            else row_empty++;
+        }
+        if (row_empty==10) {
+            std::cout<<filled<<" "<<(29-i)<<"\n";
+            return (float)filled/(29-i)/10;
+        }
+    }
+}*/
+void game::update_filled(){
+    filled+=4;
+    for(int i=0;i<4;i++){
+        if (30-(y+i)>height){
+            for(int j=0;j<4;j++){
+                if(piecedefs[active][rotation][i][j]!=-1){
+                    height=30-(y+i);
+                    return;
+                }
+            }
+        } else return;
+    }
+}
 void game::check_clear() {
     int8_t clear[4]={-1,-1,-1,-1};
     int8_t lines = 0;
@@ -316,6 +343,8 @@ end:;
 
     if (lines)
     {
+        height-=lines;
+        filled-=10*lines;
         combo++;
         //board clear
         int8_t j = 29;
@@ -390,6 +419,8 @@ void game::receive(std::vector<int8_t> list) {
                 }
             }
             gheight += incoming;
+            height+=incoming;
+            filled+=9*incoming-2*(incoming >= 2 &&thole);
         }
     }
 
@@ -444,7 +475,9 @@ void game::reset(){
     hold_used = false;
     kick = 0;
     spin = 0;
-    
+    filled=0;
+    height=0;
+
     bag_randomizer();
     std::copy(hidden_queue.begin(),hidden_queue.begin()+5,queue);
     for(int i=0;i<5;i++){
@@ -484,6 +517,7 @@ void game::place(){
     {
         game_over = 1;
     }
+    update_filled();
     check_clear();
     hold_used = false;
     spin = 0;
@@ -509,8 +543,8 @@ start:
     for (int8_t i = 0; i < 4; i++) {
         for (int8_t j = 0; j < 4; j++) {
             if (piecedefs[active][rotation][j][i] != -1) {
-                if (board[y + j][x + i] != -1) {
-                    if(y==8)game_over=1;
+                if (board[y + j][x + i] != -1) {//collide
+                    if(y==8)game_over=1;//already up 1 row
                     else {
                         y = 8;
                         goto start;

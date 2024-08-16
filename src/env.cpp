@@ -120,7 +120,7 @@ class game_container {
                     //std::cout<<port<<"harddropped\n";
                     game::harddrop();
                     action_count = 0;
-
+                    
                     if (combo)
                         server->send(port, attack);
                     else receive(server->receive(port));
@@ -571,7 +571,7 @@ class game_container {
                 }
             }
             state[1] = self->clients[0]->x+2;
-            state[2] = self->clients[0]->y-8;
+            state[2] = self->clients[0]->y-9;
             state[3] = self->clients[0]->softdropdist();
             state[4] = self->clients[0]->rotation;
 
@@ -594,12 +594,12 @@ class game_container {
                 }
             }
             state[232 + 1] = self->clients[1]->x+2;
-            state[232 + 2] = self->clients[1]->y-8;
+            state[232 + 2] = self->clients[1]->y-9;
             state[232 + 3] = self->clients[1]->softdropdist();
             state[232 + 4] = self->clients[1]->rotation;
 
             
-            state[232 + 5] = self->clients[1]->gheight;
+            state[232 + 5] = self->clients[1]->garbage;
             state[232 + 6] = self->clients[1]->hold_used;
             state[232 + 7] = self->clients[1]->action_count;
             state[232 + 8] = self->clients[1]->active;
@@ -623,6 +623,18 @@ class game_container {
 
             PyArray_ENABLEFLAGS((PyArrayObject*)ret, NPY_ARRAY_OWNDATA);
             return ret;
+        }
+        static PyObject* check_filled(game_container* self, PyObject* Py_UNUSED){
+            float filled[2]={};
+            for (int i=0;i<2;i++){
+                if (self->clients[i]->height==0)
+                    filled[i]=0;
+                else
+                    filled[i]=((float)self->clients[i]->filled)/10/self->clients[i]->height;
+            }
+
+            PyObject* result = PyTuple_Pack(2, PyFloat_FromDouble(filled[0]), PyFloat_FromDouble(filled[1]));
+            return result;
         }
         static PyObject* piecedef(game_container* self, PyObject* Py_UNUSED) {
             npy_intp piecedef_dims[4] = {7, 4, 4, 4};
@@ -670,6 +682,7 @@ static PyMethodDef gc_methods[] = {
         "Set state function for unpickling"},
     {"step", (PyCFunction)game_container::step, METH_VARARGS, "Step game, two inputs for each board"},
     {"copy", (PyCFunction)game_container::copy, METH_NOARGS, "Copy game state"},
+    {"check_filled", (PyCFunction)game_container::check_filled, METH_NOARGS, "average blocks filled every line"},
     {NULL, NULL, 0, NULL} // Sentinel
 };
 static PyTypeObject game_container_type = {

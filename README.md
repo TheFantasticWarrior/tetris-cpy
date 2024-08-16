@@ -12,7 +12,7 @@ y=x.copy() # deep copy if needed
 x.reset() # reset state
 x.seed_reset(n) # reset with rng seed
 state=x.get_state() # shape (500,) numpy array, 1D so easier to use mp shared memory, more info below
-shapes=x.get_shapes() # (7,4,4,4) 7 pieces 4 rotations and 4x4 shape 
+shapes=x.get_shapes() # (7,4,4,4) 7 pieces 4 rotations and 4x4 shape in order of SZJLTOI
 
 x.step(ac1,ac2)
 ```
@@ -64,53 +64,43 @@ game doesn't auto reset on game over, check those signals and call reset on your
 
 ## States
 i piece goes to -2 so the value is +2 by default, if you want to draw current piece subtract that back
-
 `x = state[1]`
 
-Board is 30 high, bottom 21 is returned, y spawns at 9 normally but 8 if occupied, otherwise game over.\
-Value returned to python starts at 8 so pieces spawn at 1 normally, could be negative if you navigate the piece off screen
-
+Board is 30 high, bottom 21 is returned, y in range -9, 20. spawns at 0 or -1 depending on spawn obstructed or not  
 `y = state[2]`
 
-Distance to bottom
+Distance to bottom  
+`softdropdist = state[3]`  
 
-`softdropdist = state[3]`
+`rotation = state[4]`
 
-Default is 10 actions will force harddrop
-
-`action_count = state[4]`
-
-Garbage cleared from last action, use for reward etc
-
-`garbage = state[5]`
+Garbage cleared from last action, use for reward etc  
+`garbage = state[5]`  
 
 `hold_used = state[6]`
 
-`rotation = state[7]`
+Default is 10 actions will force harddrop  
+`action_count = state[7]`  
 
 `active = state[8]`
 
-Draw active piece on current location(you have to check x negative yourself):
-
+Draw active piece on current location(you have to check x negative yourself):  
 `board[x-2,y]=shape[active][rotation]`
 
-Held can be -1 meaning not used
-
-`held_piece = state[9]`
+Held can be -1 meaning not used  
+`held_piece = state[9]`  
 
 `next_pieces = state[10:15]`
 
-Cheat data(hidden queue)
-
+Cheat data(hidden queue)  
 `hidden_queue=state[15:22]`
 
-Less cheating because you can manually count the bag:
-
+Less cheating because you can manually count the bag:  
 `hidden_queue=sort(state[15:22])`
 
 
 Board `state[22:232].reshape(21,10)`
-pieces order SZJLTOI
+
 # Feedback
 Any ideas for improvements are welcome. 
 
