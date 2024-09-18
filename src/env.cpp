@@ -854,7 +854,7 @@ class game_renderer {
             int render_size=-1;
             float fps=-1;
             if (!PyArg_ParseTuple(args, "|iii", &render_mode, &render_size,&fps)) {
-                return NULL;
+                return -1;
             }
             game_renderer* r;
             if (render_mode == -1 && render_size == -1)
