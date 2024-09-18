@@ -28,16 +28,17 @@ class game_container {
         class game_server {
             public:
                 int stored_attack=0;
+                bool ready=true;
                 std::vector<int8_t> attack_queue{};
                 game_server() { reset(); }
                 game_server(const game_server& other) {
                     stored_attack = other.stored_attack;
-
-                    attack_queue.resize(other.attack_queue.size());
-                    std::copy(other.attack_queue.begin(), other.attack_queue.end(), attack_queue.begin());
+                    ready=other.ready;
+                    attack_queue.assign(other.attack_queue.begin(), other.attack_queue.end());
                 }
                 void send(int port, int attack) {
                     int side = (port == 1 ? 1 : -1);
+                    if(attack==0)return;
                     if (side * attack * stored_attack > 0) {
                         attack_queue.push_back(attack);
                     }
@@ -69,18 +70,21 @@ class game_container {
                     }
 
                     stored_attack += side * attack;
+                    ready=false;
                 }
-                std::vector<int8_t> receive(int port) {
-                    if (port == 1 && stored_attack < 0) {
-                        stored_attack = 0;
-                        return attack_queue;
+                bool receive(int port) {
+                    if (ready){
+                        if (port == 1 && stored_attack < 0) {
+                            stored_attack = 0;
+                            return true;
+                        }
+                        if (port == 2 && stored_attack > 0)
+                        {
+                            stored_attack = 0;
+                            return true;
+                        }
                     }
-                    if (port == 2 && stored_attack > 0)
-                    {
-                        stored_attack = 0;
-                        return attack_queue;
-                    }
-                    return {};
+                    return false;
                 }
                 void reset() {
                     stored_attack = 0;
@@ -123,50 +127,87 @@ class game_container {
                     
                     if (combo)
                         server->send(port, attack);
-                    else receive(server->receive(port));
+                    else {
+                        if(server->receive(port)){
+                            receive(server->attack_queue);
+                        }
+                    }
                     game::new_piece();
+                    
 
                 }
                 void game_step(int action) {
-                    action_count++;
+                    last_invalid=false;
+                    ++action_count;
                     if (action_count == 10)
                     {
                         harddrop();
-                        last_invalid = 1;
+                        last_invalid = true;
                     }
                     else {
+                        int old;
                         switch (action)
                         {
                             case 0:
+                                if (hold_used) last_invalid=true;
                                 hold();
                                 break;
                             case 1:
                                 harddrop();
                                 break;
                             case 2:
+                                old=rotation;
                                 rotate(1);
+                                if(old==rotation){
+                                    last_invalid=true;
+                                }
                                 break;
                             case 3:
+                                old=rotation;
                                 rotate(-1);
+                                if(old==rotation){
+                                    last_invalid=true;
+                                }
                                 break;
                             case 4:
+                                old=x;
                                 move(0, -1);
+                                if(old==x){
+                                    last_invalid=true;
+                                }
                                 break;
                             case 5:
+                                old=x;
                                 move(0, 1);
+                                if(old==x){
+                                    last_invalid=true;
+                                }
                                 break;
                             case 6:
+                                old=x;
                                 move(1, -1);
+                                if(old==x){
+                                    last_invalid=true;
+                                }
                                 break;
                             case 7:
+                                old=x;
                                 move(1, 1);
+                                if(old==x){
+                                    last_invalid=true;
+                                }
                                 break;
                             case 8:
                                 if (softdropdist() > 0)
                                     softdrop();
+                                else last_invalid=true;
                                 break;
                             case 9:
+                                old=rotation;
                                 rotate(2);
+                                if(old==rotation){
+                                    last_invalid=true;
+                                }
                                 break;
                             default:
                                 break;
@@ -180,7 +221,7 @@ class game_container {
                     PyObject* serialized = PyTuple_New(5);
 
                     // Serialize the variables from the game base class
-                    npy_intp dims[1] = {17};
+                    npy_intp dims[1] = {19};
                     PyObject* np_variables = PyArray_SimpleNew(1, dims, NPY_INT8);
                     int8_t* np_variables_data = (int8_t*)PyArray_DATA((PyArrayObject*)np_variables);
                     int8_t size=(int8_t) hidden_queue.size();  
@@ -200,7 +241,9 @@ class game_container {
                     np_variables_data[13] = (int8_t)garbage;
                     np_variables_data[14] = (int8_t)spin;
                     np_variables_data[15] = (int8_t)kick;
-                    np_variables_data[16] =size;
+                    np_variables_data[16] =(int8_t)size;
+                    np_variables_data[17] =(int8_t)filled;
+                    np_variables_data[18] =(int8_t)height;
                     PyTuple_SetItem(serialized, 0, np_variables);
 
                     npy_intp dims_queue[1] = {5};
@@ -264,13 +307,13 @@ class game_container {
                 int deserialize(PyObject* serialized) {
                     if (!PyTuple_Check(serialized)) {
                         PyErr_SetString(PyExc_TypeError, "Serialized data must be a tuple");
-                        return -1;  // Return -1 to indicate failure
+                        return -1;  // Return -1 to indicate failure;
                     }
 
                     // Check if the tuple has the expected number of elements
                     if (PyTuple_Size(serialized) != 5) {
-                        PyErr_SetString(PyExc_ValueError, "Serialized data tuple must contain variables tuple, queue array, and board array");
-                        return -1;  // Return -1 to indicate failure
+                        PyErr_SetString(PyExc_ValueError, "Serialized data tuple must contain 5 elements");
+                        return -1;  // Return -1 to indicate failure;
                     }
 
                     // Extract variables tuple, queue array, and board array from serialized data
@@ -283,41 +326,43 @@ class game_container {
                     // Check if variables tuple is a NumPy array
                     if (!PyArray_Check(variables_tuple)) {
                         PyErr_SetString(PyExc_TypeError, "Variables tuple must be a NumPy array");
-                        return -1;  // Return -1 to indicate failure
+                        return -1;  // Return -1 to indicate failure;
                     }
 
                     // Check if queue array is a NumPy array
                     if (!PyArray_Check(queue_array)) {
                         PyErr_SetString(PyExc_TypeError, "Queue array must be a NumPy array");
-                        return -1;  // Return -1 to indicate failure
+                        return -1;  // Return -1 to indicate failure;
                     }
 
                     // Check if board array is a NumPy array
                     if (!PyArray_Check(board_array)) {
                         PyErr_SetString(PyExc_TypeError, "Board array must be a NumPy array");
-                        return -1;  // Return -1 to indicate failure
+                        return -1;  // Return -1 to indicate failure;
                     }
 
                     // Check the size of the variables tuple
                     PyArrayObject* np_variables = (PyArrayObject*)variables_tuple;
-                    if (PyArray_SIZE(np_variables) != 17) {
-                        PyErr_SetString(PyExc_ValueError, "Variables tuple must have 16 elements");
-                        return -1;  // Return -1 to indicate failure
+                    if (PyArray_SIZE(np_variables) != 19) {
+                        PyErr_SetString(PyExc_ValueError, "Variables tuple must have 19 elements");
+                        return -1;  // Return -1 to indicate failure;
                     }
 
                     // Check the size of the queue array
                     PyArrayObject* np_queue = (PyArrayObject*)queue_array;
                     if (PyArray_SIZE(np_queue) != 5) {
                         PyErr_SetString(PyExc_ValueError, "Queue array must have 5 elements");
-                        return -1;  // Return -1 to indicate failure
+                        return -1;  // Return -1 to indicate failure;
                     }
 
                     // Check the size of the board array
                     PyArrayObject* np_board = (PyArrayObject*)board_array;
                     if (PyArray_DIM(np_board, 0) != ROWS || PyArray_DIM(np_board, 1) != COLUMNS) {
                         PyErr_SetString(PyExc_ValueError, "Board array must have dimensions ROWS x COLUMNS");
-                        return -1;  // Return -1 to indicate failure
+                        return -1;  // Return -1 to indicate failure;
                     }
+
+                    // Check the size and type of gen_states
                     if (!PyTuple_Check(gen_states) || PyTuple_Size(gen_states) != 2) {
                         PyErr_SetString(PyExc_TypeError, "Invalid gen data: expected a tuple of size 2");
                         return -1;
@@ -343,6 +388,8 @@ class game_container {
                     this->spin = (bool)np_variables_data[14];
                     this->kick = (bool)np_variables_data[15];
 
+                    this->filled =(int)np_variables_data[17];
+                    this->height=(int)np_variables_data[18] ;
                     int8_t* qdata = (int8_t*)PyArray_DATA(np_queue);
                     // Extract queue from the variables tuple
                     for (int i = 0; i < 5; ++i) {
@@ -357,32 +404,32 @@ class game_container {
                         }
                     }
 
-                    int8_t hidden_queue_size =np_variables_data[14];
+                    int8_t hidden_queue_size = np_variables_data[16]; // Correct index for hidden_queue_size
 
                     // Extract hidden_queue data from the separate NumPy array
                     PyArrayObject* np_hidden_queue = (PyArrayObject*)hidden_queue_array;
                     int8_t* np_hidden_queue_data = (int8_t*)PyArray_DATA(np_hidden_queue);
                     this->hidden_queue.assign(np_hidden_queue_data, np_hidden_queue_data + hidden_queue_size);
 
-                    std::stringstream ss;
-
+                    // Extract generator states
                     PyObject* state1 = PyTuple_GetItem(gen_states, 0);
                     PyObject* state2 = PyTuple_GetItem(gen_states, 1);
-                    // Convert the Python object to a stringstream
-                    PyObject* pyBytes = PyBytes_FromObject(state1);
-                    const char* bytes = PyBytes_AsString(pyBytes);
-                    ss.write(bytes, PyBytes_Size(state1));
 
-                    // Extract the state from the stringstream into the mt19937 engine
-                    ss >> gen;
-                    pyBytes = PyBytes_FromObject(state1);
-                    bytes = PyBytes_AsString(pyBytes);
-                    ss.write(bytes, PyBytes_Size(state2));
+                    // Convert the Python object to a C++ string
+                    const char* bytes1 = PyBytes_AsString(state1);
+                    size_t size1 = PyBytes_Size(state1);
+                    std::string data1(bytes1, size1);
 
-                    // Extract the state from the stringstream into the mt19937 engine
-                    ss >> gen2;
-                    // Don't forget to release the Python bytes object
-                    Py_DECREF(pyBytes);
+                    const char* bytes2 = PyBytes_AsString(state2);
+                    size_t size2 = PyBytes_Size(state2);
+                    std::string data2(bytes2, size2);
+
+                    // Set the state of the generators
+                    std::stringstream ss1(data1);
+                    ss1 >> gen;
+
+                    std::stringstream ss2(data2);
+                    ss2 >> gen2;
 
                     return 0;
                 }
@@ -440,6 +487,7 @@ class game_container {
             }
             //delete self;
             //Py_TYPE(self)->tp_free((PyObject*)self);
+            PyObject_Del(self);
 
         }
         static PyObject* reduce(game_container* self) {
@@ -474,12 +522,12 @@ class game_container {
                 return NULL;  
             }
 
-            
+
             if(PyTuple_Size(state) != 3) {
                 PyErr_Format(PyExc_ValueError, "Invalid state: expected a tuple of size 2, got tuple of size %d", PyTuple_Size(state));
                 return NULL;  
             }
-            
+
             PyObject* server_state = PyTuple_GetItem(state, 0);
             self->server->stored_attack=PyLong_AsLong(PyTuple_GetItem(server_state, 0));
             PyObject* np_array = PyTuple_GetItem(server_state, 1);
@@ -489,7 +537,7 @@ class game_container {
             self->server->attack_queue.assign(attack_queue_data, attack_queue_data + size);
 
 
-            
+
             PyObject* client_state = PyTuple_GetItem(state, 1);
             if (self->clients[0]->deserialize(client_state) == -1) {
                 return NULL;  
@@ -527,18 +575,18 @@ class game_container {
         }
         static PyObject* get_state(game_container* self, PyObject * args) {
             /*
-            int x = 0;
-            if (!PyArg_ParseTuple(args, "|i", &x))
-                return NULL;
-            if(x!=1 and x!=2 and x!=0){
-                return NULL;
-            }
-            */
+               int x = 0;
+               if (!PyArg_ParseTuple(args, "|i", &x))
+               return NULL;
+               if(x!=1 and x!=2 and x!=0){
+               return NULL;
+               }
+               */
             const npy_intp dim[1] = {500};
             PyObject* ret=PyArray_ZEROS(1,dim,NPY_INT8,0);
             int8_t* state = (int8_t*)PyArray_DATA((PyArrayObject*)ret);
             if (self->clients[0]->game_over|| self->clients[1]->game_over||
-                self->server->stored_attack>30||self->server->stored_attack<-30){
+                    self->server->stored_attack>30||self->server->stored_attack<-30){
                 if (self->clients[0]->game_over&&self->clients[1]->game_over)
                 {
                     state[0] = 127;
@@ -580,11 +628,11 @@ class game_container {
             state[7] = self->clients[0]->action_count;
             state[8] = self->clients[0]->active;
             state[9] = self->clients[0]->held_piece;
-            for (size_t i = 0; i < 5; i++)
+            for (size_t i = 0; i < 5; ++i)
             {
                 state[i + 10] = self->clients[0]->queue[i];
             }
-            for (size_t i = 0; i < self->clients[0]->hidden_queue.size(); i++)
+            for (size_t i = 0; i < self->clients[0]->hidden_queue.size(); ++i)
             {
                 state[i + 15] = self->clients[0]->hidden_queue[i];
             }
@@ -598,17 +646,17 @@ class game_container {
             state[232 + 3] = self->clients[1]->softdropdist();
             state[232 + 4] = self->clients[1]->rotation;
 
-            
+
             state[232 + 5] = self->clients[1]->garbage;
             state[232 + 6] = self->clients[1]->hold_used;
             state[232 + 7] = self->clients[1]->action_count;
             state[232 + 8] = self->clients[1]->active;
             state[232 + 9] = self->clients[1]->held_piece;
-            for (size_t i = 0; i < 5; i++)
+            for (size_t i = 0; i < 5; ++i)
             {
                 state[232 + i + 10] = self->clients[1]->queue[i];
             }
-            for (size_t i = 0; i < self->clients[1]->hidden_queue.size(); i++)
+            for (size_t i = 0; i < self->clients[1]->hidden_queue.size(); ++i)
             {
                 state[i + 247] = self->clients[1]->hidden_queue[i];
             }
@@ -625,15 +673,27 @@ class game_container {
             return ret;
         }
         static PyObject* check_filled(game_container* self, PyObject* Py_UNUSED){
-            float filled[2]={};
-            for (int i=0;i<2;i++){
-                if (self->clients[i]->height==0)
-                    filled[i]=0;
+            float filled[2] = {};
+            for (int i = 0; i < 2; ++i) {
+                if (self->clients[i]->height == 0)
+                    filled[i] = 1;
                 else
-                    filled[i]=((float)self->clients[i]->filled)/10/self->clients[i]->height;
+                    filled[i] = ((float)self->clients[i]->filled) / 10 / self->clients[i]->height;
             }
 
-            PyObject* result = PyTuple_Pack(2, PyFloat_FromDouble(filled[0]), PyFloat_FromDouble(filled[1]));
+            PyObject* py_filled0 = PyFloat_FromDouble(filled[0]);
+            PyObject* py_filled1 = PyFloat_FromDouble(filled[1]);
+
+            if (!py_filled0 || !py_filled1) {
+                Py_XDECREF(py_filled0);  // Safely decrement if allocation fails
+                Py_XDECREF(py_filled1);
+                return NULL;  // Handle error if allocation fails
+            }
+
+            PyObject* result = PyTuple_Pack(2, py_filled0, py_filled1);
+            Py_DECREF(py_filled0);  // Decrease reference count after adding to tuple
+            Py_DECREF(py_filled1);
+
             return result;
         }
         static PyObject* piecedef(game_container* self, PyObject* Py_UNUSED) {
@@ -643,13 +703,13 @@ class game_container {
             PyObject* np_piecedef = PyArray_SimpleNew(4, piecedef_dims, NPY_INT8);
             int8_t* np_piecedef_data = (int8_t*)PyArray_DATA((PyArrayObject*)np_piecedef);
 
-            for (size_t i = 0; i < 7; i++)
+            for (size_t i = 0; i < 7; ++i)
             {
-                for (size_t j = 0; j < 4; j++)
+                for (size_t j = 0; j < 4; ++j)
                 {
-                    for (size_t k = 0; k < 4; k++)
+                    for (size_t k = 0; k < 4; ++k)
                     {
-                        for (size_t l = 0; l < 4; l++)
+                        for (size_t l = 0; l < 4; ++l)
                         {
                             np_piecedef_data[i *64 + j * 16 + k*4+l] = ((self->clients[0]->piecedefs[i][j][k][l] + 1) > 0);
                         }
@@ -663,6 +723,7 @@ class game_container {
             int x, y;
             if (!PyArg_ParseTuple(args, "ii", &x, &y))
                 return NULL;
+            self->server->ready=true;
             self->clients[0]->game_step(x);
             self->clients[1]->game_step(y);
             Py_RETURN_NONE;
@@ -727,19 +788,19 @@ static PyTypeObject game_container_type = {
 };
 
 /* breaks on windows?
-static PyTypeObject game_container_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-        .tp_name = "tetris.Container",
-    .tp_basicsize = sizeof(game_container),
-    .tp_itemsize = 0,
-    .tp_dealloc = (destructor)game_container::dealloc,
-    .tp_flags = Py_TPFLAGS_BASETYPE,//|Py_TPFLAGS_HEAPTYPE,
-    .tp_doc = "game_container objects\ninit(no arg):new game state\ninit(state,hidden_queue length, hidden queue,attack length, stored attacks)",
-    .tp_methods = gc_methods,
-    .tp_init = (initproc)game_container::init,
-    .tp_new = PyType_GenericNew,//game_container::_new,
-};
-*/
+   static PyTypeObject game_container_type = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+   .tp_name = "tetris.Container",
+   .tp_basicsize = sizeof(game_container),
+   .tp_itemsize = 0,
+   .tp_dealloc = (destructor)game_container::dealloc,
+   .tp_flags = Py_TPFLAGS_BASETYPE,//|Py_TPFLAGS_HEAPTYPE,
+   .tp_doc = "game_container objects\ninit(no arg):new game state\ninit(state,hidden_queue length, hidden queue,attack length, stored attacks)",
+   .tp_methods = gc_methods,
+   .tp_init = (initproc)game_container::init,
+   .tp_new = PyType_GenericNew,//game_container::_new,
+   };
+   */
 game_container* game_container::copy(game_container* self, PyObject* Py_UNUSED) {
     game_container* container = PyObject_New(game_container, &game_container_type);
 
@@ -923,7 +984,7 @@ class game_renderer {
                 SDL_RenderClear(renderer);
                 bg.x = BOARDX;
                 /*
-                   frameCount++;
+                   ++frameCount;
                    int timerFPS = SDL_GetTicks() - lastFrame;
                    if (timerFPS < (8)) {
                    SDL_Delay((8) - timerFPS);
@@ -943,9 +1004,9 @@ class game_renderer {
             color_from_rgb(0x666666);
             bg.x += xloc;
             SDL_RenderFillRect(renderer, &bg);
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 10; ++i)
             {
-                for (int j = 0; j < 21; j++)
+                for (int j = 0; j < 21; ++j)
                 {
                     rect.x = 1 + BOARDX + i * (block_size + 1) + xloc;
                     rect.y = -block_size / 2 + j * (block_size + 1);
@@ -955,13 +1016,13 @@ class game_renderer {
                 }
             }
             // queue
-            for (int n = 0; n < 5; n++)
+            for (int n = 0; n < 5; ++n)
             {
 
                 color_from_rgb(colors[g.queue[n] + 1]);
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 4; ++i)
                 {
-                    for (int j = 0; j < 4; j++)
+                    for (int j = 0; j < 4; ++j)
                     {
                         rect.x = 4 * BOARDX + i * (block_size + 1) + xloc;
                         rect.y = block_size * 3 * n + j * (block_size + 1);
@@ -977,9 +1038,9 @@ class game_renderer {
             if (g.held_piece != -1)
             {
                 color_from_rgb(colors[g.held_piece + 1]);
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 4; ++i)
                 {
-                    for (int j = 0; j < 4; j++)
+                    for (int j = 0; j < 4; ++j)
                     {
                         if (g.piecedefs[g.held_piece][0][j][i] != -1) {
 
@@ -994,56 +1055,56 @@ class game_renderer {
             //active
             //if (active_piece)
             //{
-                for (int i = 0; i < 4; i++)
-                {
-                    for (int j = 0; j < 4; j++)
-                    {
-                        rect.x = BOARDX + (g.x + i) * (block_size + 1) + xloc;
-                        rect.y = block_size / 2 + (g.y - 10 + j) * (block_size + 1);
-                        if (g.piecedefs[g.active][g.rotation][j][i] != -1)
-                        {
-                            rgba_from_rgb(colors[g.piecedefs[g.active][g.rotation][j][i] + 1]);
-                            SDL_RenderFillRect(renderer, &rect);
-                        }
-
-                    }
-                }
-            /*}
-            else
+            for (int i = 0; i < 4; ++i)
             {
-                for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; ++j)
                 {
-                    for (int j = 0; j < 4; j++)
+                    rect.x = BOARDX + (g.x + i) * (block_size + 1) + xloc;
+                    rect.y = block_size / 2 + (g.y - 10 + j) * (block_size + 1);
+                    if (g.piecedefs[g.active][g.rotation][j][i] != -1)
                     {
-                        rect.x = BOARDX + (3 + i) * (block_size + 1) + xloc;
-                        rect.y = block_size / 2 + (-1 + j) * (block_size + 1);
-                        if (g.piecedefs[g.active][0][j][i] != -1)
-                        {
-                            rgba_from_rgb(colors[g.piecedefs[g.active][0][j][i] + 1]);
-                            SDL_RenderFillRect(renderer, &rect);
-                        }
-
+                        rgba_from_rgb(colors[g.piecedefs[g.active][g.rotation][j][i] + 1]);
+                        SDL_RenderFillRect(renderer, &rect);
                     }
+
                 }
-            }*/
+            }
+            /*}
+              else
+              {
+              for (int i = 0; i < 4; ++i)
+              {
+              for (int j = 0; j < 4; ++j)
+              {
+              rect.x = BOARDX + (3 + i) * (block_size + 1) + xloc;
+              rect.y = block_size / 2 + (-1 + j) * (block_size + 1);
+              if (g.piecedefs[g.active][0][j][i] != -1)
+              {
+              rgba_from_rgb(colors[g.piecedefs[g.active][0][j][i] + 1]);
+              SDL_RenderFillRect(renderer, &rect);
+              }
+
+              }
+              }
+              }*/
 
             //ghost
             //if (ghost) {
-                ghosty = g.y + g.softdropdist();
-                for (int i = 0; i < 4; i++)
+            ghosty = g.y + g.softdropdist();
+            for (int i = 0; i < 4; ++i)
+            {
+                for (int j = 0; j < 4; ++j)
                 {
-                    for (int j = 0; j < 4; j++)
+                    rect.x = BOARDX + (g.x + i) * (block_size + 1) + xloc;
+                    rect.y = block_size / 2 + (ghosty - 10 + j) * (block_size + 1);
+                    if (g.piecedefs[g.active][g.rotation][j][i] != -1)
                     {
-                        rect.x = BOARDX + (g.x + i) * (block_size + 1) + xloc;
-                        rect.y = block_size / 2 + (ghosty - 10 + j) * (block_size + 1);
-                        if (g.piecedefs[g.active][g.rotation][j][i] != -1)
-                        {
-                            rgba_from_rgb(colors[g.piecedefs[g.active][g.rotation][j][i] + 1]);
-                            SDL_RenderFillRect(renderer, &rect);
-                        }
-
+                        rgba_from_rgb(colors[g.piecedefs[g.active][g.rotation][j][i] + 1]);
+                        SDL_RenderFillRect(renderer, &rect);
                     }
+
                 }
+            }
             //}
         }
         void draw_atk(int side, std::vector<int8_t> attacks) {
@@ -1054,7 +1115,7 @@ class game_renderer {
             SDL_SetRenderDrawColor(renderer,255,0,0,255);
             for (int i:attacks)
             {
-                for (size_t j = sum; j < sum+i; j++)
+                for (size_t j = sum; j < sum+i; ++j)
                 {
                     red_line.y = 21* block_size +block_size / 2 - j * (block_size + 1);
                     SDL_RenderFillRect(renderer, &red_line);
@@ -1191,12 +1252,12 @@ PyInit_tetris(void)
 
     Py_INCREF(&game_container_type);
     PyModule_AddObject(m, "Container", (PyObject*)&game_container_type);
-    #ifdef RENDER
+#ifdef RENDER
     if (PyType_Ready(&game_renderer_type) < 0)
         return NULL;
     Py_INCREF(&game_renderer_type);
     PyModule_AddObject(m, "Renderer", (PyObject*)&game_renderer_type);
-    #endif
+#endif
     return m;
 }
 int main(int argc, char* argv[]) {

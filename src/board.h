@@ -1,6 +1,6 @@
 #ifndef boardh
 #define boardh
-
+#include <iostream>
 #include <random>
 #include <vector>
 const int8_t COLUMNS=10;
@@ -29,14 +29,14 @@ class game
         int8_t gheight=0;
         int height=0;
         int filled=0;
-        void set_seed(int8_t seed);
+        void set_seed(int seed);
 
         void random_recv(int8_t max);
 
         float check_filled();
         void update_filled();
         void new_piece();
-        void receive(std::vector<int8_t> list);
+        void receive(std::vector<int8_t>& list);
 
         int8_t softdropdist() const;
 
@@ -70,14 +70,15 @@ class game
             kick = other.kick;
             height=other.height;
             filled=other.filled;
-            for (int8_t i = 0; i < 5; ++i) {
+            for (int8_t i = 0; i < 5; i++) {
                 queue[i] = other.queue[i];
             }
             copy_board(board, other.board);
             hidden_queue.assign(other.hidden_queue.begin(), other.hidden_queue.end());
+            
             gen=other.gen;
             gen2=other.gen2;
-
+            next_seed=other.next_seed;
         }
         int8_t garbage=0;
         int8_t piecedefs [7][4][4][4]= { //piece(SZJLTOI), rotation, position in board
@@ -329,7 +330,7 @@ class game
         std::vector<int8_t> hidden_queue = {};
     private:
 
-        int8_t next_seed=0;
+        int next_seed=0;
         bool seeded = false;
         void bag_randomizer();
         void place();

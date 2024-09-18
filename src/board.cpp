@@ -398,10 +398,10 @@ end:;
         combo = 0;
     }
 
-    cleared = (10 * (attack+ b2b *2* (lines > 0)) + 2 * lines+b2b);
+    cleared = (15 * (attack+ b2b * (lines > 0)) + 3 * lines+b2b);
 }
 
-void game::receive(std::vector<int8_t> list) {
+void game::receive(std::vector<int8_t>& list) {
     while (!list.empty()) {
         int8_t incoming = list[0];
         list.erase(list.begin());
@@ -426,12 +426,12 @@ void game::receive(std::vector<int8_t> list) {
 
 
 }
-void game::set_seed(int8_t seed) {
+void game::set_seed(int seed) {
 
     std::random_device rd;
     if(seed==0)
     {
-        int8_t seed = rd();
+        int seed = rd();
         gen.seed(seed);
     }
     else
@@ -440,27 +440,31 @@ void game::set_seed(int8_t seed) {
     }
     seeded = true;
     next_seed = gen();
-
     gen2.seed(rd());
 }
 
 void game::random_recv(int8_t max) {
     int8_t recv;
     int8_t curr = 0;
-    std::uniform_int_distribution<>dis(0, max);
+    std::uniform_int_distribution<> dis(0, max);
     recv = dis(gen2);
+
+    // Create a vector and pass it by reference
+    std::vector<int8_t> vec1{1, 1, 1, 1};
     if (recv == 0) {
-        receive(std::vector<int8_t>{1,1,1,1});
+        receive(vec1);
         return;
     }
-    std::uniform_int_distribution<>dis2(0, 1);
+
+    std::uniform_int_distribution<> dis2(0, 1);
     int8_t b2bon;
+
     while (curr < recv) {
         b2bon = dis2(gen2);
-        receive(std::vector<int8_t>{(int8_t)(b2bon + 4)});
+        std::vector<int8_t> vec2{(int8_t)(b2bon + 4)};
+        receive(vec2);
         curr += b2bon + 4;
     }
-    return;
 }
 void game::reset(){
     if (!seeded)set_seed(0);
@@ -479,10 +483,13 @@ void game::reset(){
     height=0;
 
     bag_randomizer();
+    //if(hidden_queue.size()<5){
+    //    std::cerr<<"hidden queue not filled\n";
+    //}
     std::copy(hidden_queue.begin(),hidden_queue.begin()+5,queue);
-    for(int i=0;i<5;i++){
-    }
+    
     hidden_queue.erase(hidden_queue.begin(),hidden_queue.begin()+5);
+    
     new_piece();
 }
 
@@ -492,6 +499,7 @@ void game::bag_randomizer()
     int8_t a[7]={0,1,2,3,4,5,6};
     std::shuffle(a,a+7,gen);
     hidden_queue.insert(hidden_queue.end(), std::begin(a),std::end(a) );
+    
 }
 void game::place(){
     int8_t count = 0;
@@ -499,9 +507,9 @@ void game::place(){
         for (int8_t j=0;j<4;j++){
             if(piecedefs[active][rotation][j][i]!=-1){
                 if (board[y+j][x+i]==-1){
-                    if(x+i>=COLUMNS){
+                    /*if(x+i>=COLUMNS){
                         std::cout<<(int)active<<(int)rotation<<(int)x<<"broken\n";
-                    }
+                    }*/
                     board[y+j][x+i]=piecedefs[active][rotation][j][i];
                     if (y + j < 10)
                     {
@@ -533,8 +541,12 @@ void game::new_piece(){
     if (hidden_queue.empty()) {
         bag_randomizer();
     } 
+    //if (hidden_queue.size() < 1) {
+    //    std::cerr<<"hidden_queue not filled in new piece\n";
+    //}
     queue[4] = hidden_queue[0];
     hidden_queue.erase(hidden_queue.begin());
+    
     rotation=0;
     spawn_game_over();
 }
@@ -615,33 +627,7 @@ void game::harddrop(){
     y+=softdropdist();
     place();
 }
-void game::harddrop2() { //slower
-    int8_t ny = y;
-    bool allowed = true;
-    while (allowed) {
-        ny++;
-        for (int8_t i = 0; i < 4; i++) {
-            for (int8_t j = 0; j < 4; j++) {
-                if (piecedefs[active][rotation][j][i] != -1) {
-                    if (board[ny + j][x + i] != -1) {
-                        allowed = false;
-                        goto end;
-                    }
-                }
-            }
-        }
-    }
-end:
-    for (int8_t i = 0; i < 4; i++) {
-        for (int8_t j = 0; j < 4; j++) {
-            if (piecedefs[active][rotation][j][i] != -1) {
-                board[ny-1 + j][x + i] = piecedefs[active][rotation][j][i];
-            }
-        }
-    }
-    new_piece();
-    hold_used = false;
-}
+
 int8_t mod(int8_t x,int8_t y) {
     return ((x % y) + y) % y;
 }
